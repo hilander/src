@@ -7,6 +7,8 @@ set ( LIBMIXED_SOURCES
   scheduler_tools.cpp
   scheduler.cpp
   userspace_scheduler.cpp
+  scheduler_tools.cpp
+  message_queue.cpp
   )
 
 add_library ( libmixed SHARED ${LIBMIXED_SOURCES} )
