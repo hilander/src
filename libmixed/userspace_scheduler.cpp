@@ -98,7 +98,7 @@ scheduler::userspace_scheduler::spawn(fiber::fiber::ptr fiber)
   ssize_t written;
   do
   {
-    written = message_device->write_in( (void*) &sp, sizeof(spawned_data) );
+    written = message_device->write_in( &sp );
   }
   while ( ( written != sizeof(spawned_data) ) || ( errno == EAGAIN ) )
 		; // a co!
@@ -125,7 +125,7 @@ scheduler::userspace_scheduler::spawn(void* f, int )
   int len = 0;
   do
   {
-    len = message_device->write_out( (void*) &sp, sizeof(spawned_data) );
+    len = message_device->write_out( &sp );
   }
   while ( ( len != sizeof(spawned_data) ) || ( errno == EAGAIN ) )
     ;
@@ -176,7 +176,7 @@ scheduler::userspace_scheduler::send_message(scheduler::data_kind k, void* d)
   ssize_t written;
   do
   {
-    written = message_device->write_out( (void*) buf, length );
+    written = message_device->write_out( reinterpret_cast< spawned_data* >( buf ) );
   }
   while ( ( written != length ) || ( errno == EAGAIN ) )
 		; // a co!
@@ -188,7 +188,7 @@ scheduler::userspace_scheduler::read_messages()
   size_t record_size = sizeof( sizeof(data_kind) + sizeof(void*) );
   char buf[ record_size];
   
-  if ( message_device->read_in( (void*) buf, sizeof(spawned_data) ) == sizeof(spawned_data) )
+  if ( message_device->read_in( reinterpret_cast< spawned_data* >( buf ) ) == sizeof(spawned_data) )
   {
     spawned_data *sp = (spawned_data*) buf;
     switch (sp->d)

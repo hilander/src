@@ -162,7 +162,7 @@ scheduler::ueber_scheduler::get_from_pipe(scheduler::raw_pipe* rp, scheduler::sp
   int len = 0;
   //do
   //{
-    len = rp->read_out( (void*)sp, sizeof(spawned_data) );
+    len = rp->read_out( sp );
     //}
     //while ( errno == EAGAIN )
     //  ;

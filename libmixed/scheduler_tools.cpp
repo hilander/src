@@ -18,26 +18,26 @@ scheduler::raw_pipe::init()
 }
 
 int
-scheduler::raw_pipe::write_in( void* sp, size_t s )
+scheduler::raw_pipe::write_in( spawned_data* sp )
 {
-  return write( in[1], sp, s );
+  return 0;
 }
 
 int 
-scheduler::raw_pipe::read_in( void* sp, size_t s )
+scheduler::raw_pipe::read_in( spawned_data* sp )
 {
-  return read( in[0], sp, s );
+  return 0;
 }
 
 int 
-scheduler::raw_pipe::write_out( void* sp, size_t s )
+scheduler::raw_pipe::write_out( spawned_data* sp )
 { 
 
-  return write( out[1], sp, s );
+  return 0;
 }
 
 int 
-scheduler::raw_pipe::read_out( void* sp, size_t s )
+scheduler::raw_pipe::read_out( spawned_data* sp )
 {
-  return read( out[0], sp, s );
+  return 0;
 }

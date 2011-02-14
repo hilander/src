@@ -55,10 +55,10 @@ class raw_pipe
 
 	public:
 		typedef raw_pipe* ptr;
-		int write_in( void* sp, size_t s );
-		int read_in( void* sp, size_t s );
-		int write_out( void* sp, size_t s );
-		int read_out( void* sp, size_t s );
+		int write_in( spawned_data* sp );
+		int read_in( spawned_data* sp );
+		int write_out( spawned_data* sp );
+		int read_out( spawned_data* sp );
 };
 
 }
