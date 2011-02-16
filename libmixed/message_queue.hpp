@@ -17,6 +17,7 @@ class message
   message();
   ~message();
   bool used();
+  void set_used();
 
   private:
   spawned_data* sd;
@@ -28,13 +29,19 @@ class message
 class message_queue
 {
   private:
-    std::list< message > ml;
+		enum use_mode { ZEROED, READABLE, WRITEABLE };
+		const int queue_count = 2;
+		typedef std::list< message* > messages_t;
+    messages_t mls[ queue_count ];
+		use_mode ums[ queue_count ];
+		messages_t& get_readable_queue();
+		messages_t& get_writeable_queue();
   public:
     message_queue();
     ~message_queue();
     void clean();
     // TODO:
-    //read();
+    bool read( message* m );
     //write();
 };
 
