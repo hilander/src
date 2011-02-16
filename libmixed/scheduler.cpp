@@ -1,3 +1,4 @@
+#include <iostream>
 #include "scheduler.hpp"
 #include "userspace_scheduler.hpp"
 
@@ -198,8 +199,10 @@ scheduler::ueber_scheduler::spawn(fiber::fiber::ptr fiber)
   )
   {
     q.push( *it );
+    std::cout << "loc" << std::endl;
   }
   q.top()->spawn( fiber );
+  std::cout << "ueb: spawn: found loc" << std::endl;
   blocked_num++;
 }
 

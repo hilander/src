@@ -188,7 +188,7 @@ scheduler::userspace_scheduler::read_messages()
   size_t record_size = sizeof( sizeof(data_kind) + sizeof(void*) );
   char buf[ record_size];
   
-  if ( message_device->read_in( reinterpret_cast< spawned_data* >( buf ) ) == sizeof(spawned_data) )
+  if ( message_device->read_in( reinterpret_cast< spawned_data* >( buf ) ) )
   {
     spawned_data *sp = (spawned_data*) buf;
     switch (sp->d)
