@@ -40,7 +40,7 @@ bool
 scheduler::raw_pipe::write_out( spawned_data* sp )
 { 
 
-	cout << "write_out" << endl;
+	//cout << "write_out" << endl;
   message::ptr m = new message( sp );
   return out.write( m );
 }
@@ -48,7 +48,7 @@ scheduler::raw_pipe::write_out( spawned_data* sp )
 bool 
 scheduler::raw_pipe::read_out( spawned_data* sp )
 {
-	cout << "read_out" << endl;
+	//cout << "read_out" << endl;
   message::ptr m = new message( sp );
   return in.read( m );
 }
