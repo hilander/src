@@ -95,12 +95,12 @@ scheduler::userspace_scheduler::spawn(fiber::fiber::ptr fiber)
   spawned_data sp;
   sp.d = SPAWN;
   sp.p = fiber;
-  ssize_t written;
+  bool written;
   do
   {
     written = message_device->write_in( &sp );
   }
-  while ( ( written != sizeof(spawned_data) ) || ( errno == EAGAIN ) )
+  while ( !written )
 		; // a co!
 	std::cout << "spawn: Done." << std::endl;
 }
@@ -122,12 +122,12 @@ scheduler::userspace_scheduler::spawn(void* f, int )
   spawned_data sp;
   sp.d = SPAWN_CONFIRMED;
   sp.p = f;
-  int len = 0;
+  bool written;
   do
   {
-    len = message_device->write_out( &sp );
+    written = message_device->write_out( &sp );
   }
-  while ( ( len != sizeof(spawned_data) ) || ( errno == EAGAIN ) )
+  while ( !written )
     ;
 	std::cout << "spawn: confirmed." << std::endl;
 }
@@ -173,12 +173,12 @@ scheduler::userspace_scheduler::send_message(scheduler::data_kind k, void* d)
     default:
       break;
   }
-  ssize_t written;
+  bool written;
   do
   {
     written = message_device->write_out( reinterpret_cast< spawned_data* >( buf ) );
   }
-  while ( ( written != length ) || ( errno == EAGAIN ) )
+  while ( !written )
 		; // a co!
 }
 

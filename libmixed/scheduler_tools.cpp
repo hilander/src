@@ -23,32 +23,24 @@ scheduler::raw_pipe::init()
 bool
 scheduler::raw_pipe::write_in( spawned_data* sp )
 {
-	//cout << "write_in" << endl;
-  message::ptr m = new message( sp );
-  return in.write( m );
+  return in.write( sp );
 }
 
 bool 
 scheduler::raw_pipe::read_in( spawned_data* sp )
 {
-	//cout << "read_in" << endl;
-  message::ptr m = new message( sp );
-  return in.read( m );
+  return in.read( sp );
 }
 
 bool 
 scheduler::raw_pipe::write_out( spawned_data* sp )
 { 
 
-	//cout << "write_out" << endl;
-  message::ptr m = new message( sp );
-  return out.write( m );
+  return out.write( sp );
 }
 
 bool 
 scheduler::raw_pipe::read_out( spawned_data* sp )
 {
-	//cout << "read_out" << endl;
-  message::ptr m = new message( sp );
-  return in.read( m );
+  return in.read( sp );
 }

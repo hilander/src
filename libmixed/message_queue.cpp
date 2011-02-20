@@ -4,39 +4,6 @@
 #include <iostream>
 #include <errno.h>
 
-////////////////////////////////////////////////////////////////////////////////
-// message                                                                     /
-////////////////////////////////////////////////////////////////////////////////
-scheduler::message::message( spawned_data* sp )
-{
-  sd = sp;
-  _used = false;
-}
-
-scheduler::message::message()
-{
-  _used = false;
-}
-
-scheduler::message::~message()
-{
-  if ( sd != 0 )
-  {
-    delete sd;
-  }
-}
-
-bool
-scheduler::message::used()
-{
-  return _used;
-}
-
-void
-scheduler::message::set_used()
-{
-  _used = true;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // message_queue                                                               /
@@ -50,7 +17,7 @@ scheduler::message_queue::get_readable_queue()
 	{
 		if ( ums[i] == READABLE )
 		{
-            return i;
+      return i;
 		}
 	}
 	return EAGAIN;
@@ -71,6 +38,7 @@ scheduler::message_queue::get_writeable_queue()
 		if ( ( ums[i] == ZEROED ) && ( ums[ (i+1)%2 ] == ZEROED ) )
 		{
 			ums[    i    ] = WRITEABLE;
+      std::cout << "writeable is " << (i+1)%2 << std::endl;
 			return i;
 		}
 
@@ -79,6 +47,7 @@ scheduler::message_queue::get_writeable_queue()
 			return i;
 		}
 	}
+  std::cout << "writeable(9) is " << std::endl;
 	return EAGAIN;
 }
 
@@ -97,49 +66,48 @@ scheduler::message_queue::~message_queue()
 }
 
 bool
-scheduler::message_queue::write( message::ptr m )
+scheduler::message_queue::write( spawned_data* m )
 {
-	messages_t& ml = mls[ get_writeable_queue() ];
+  int current_queue = get_writeable_queue();
+  if ( current_queue != EAGAIN )
+  {
+    messages_t& ml = mls[ current_queue ];
     ml.push_back( m );
     return true;
+  }
+  else
+  {
+    return false;
+  }
 }
 
 bool
-scheduler::message_queue::read( message::ptr m )
+scheduler::message_queue::read( spawned_data* m )
 {
-    int current_queue = get_readable_queue();
-	messages_t& ml = mls[ current_queue ];
-
-  for ( messages_t::iterator it = ml.begin();
-      it != ml.end();
-      it++
-      )
+  int current_queue = get_readable_queue();
+  if ( current_queue != EAGAIN )
   {
-    message* tm = *it;
+    messages_t& ml = mls[ current_queue ];
 
-    if ( tm == 0 ) 
+    for ( messages_t::iterator it = ml.begin();
+        it != ml.end();
+        it++
+        )
     {
-        m = 0;
-        if ( ml.empty() )
-        {
-            std::cout << "dupa!" << std::endl;
-            ums[ current_queue ] = ZEROED;
-        }
-        return false;
-    }
+      spawned_data* tm = *it;
 
-    if ( tm->used() == false )
-    {
       m = tm;
-      tm->set_used();
-      ml.erase( it );
       if ( ml.empty() )
       {
-          ums[ current_queue ] = ZEROED;
-            std::cout << "dupa!" << std::endl;
+        ums[ current_queue ] = ZEROED;
+        std::cout << "dupa!" << std::endl;
       }
+      ml.erase( it );
       return true;
     }
   }
-  return false;
+  else
+  {
+    return false;
+  }
 }
