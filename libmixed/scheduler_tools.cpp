@@ -42,5 +42,5 @@ scheduler::raw_pipe::write_out( spawned_data* sp )
 bool 
 scheduler::raw_pipe::read_out( spawned_data* sp )
 {
-  return in.read( sp );
+  return out.read( sp );
 }

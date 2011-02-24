@@ -72,7 +72,12 @@ scheduler::message_queue::write( spawned_data* m )
   if ( current_queue != EAGAIN )
   {
     messages_t& ml = mls[ current_queue ];
-    ml.push_back( m );
+    if ( m != 0 )
+    {
+      ml.push_back( m );
+      //std::cout << "written " << ( ( m->d == END ) ? "END" : "SH..." ) << "; " 
+        //<< "address: " << (unsigned long)&ml << ", size: " << ml.size() << std::endl;
+    }
     return true;
   }
   else
@@ -96,18 +101,22 @@ scheduler::message_queue::read( spawned_data* m )
     {
       spawned_data* tm = *it;
 
-      m = tm;
+      m->d = tm->d;
+      m->p = tm->p;
+      ml.erase( it );
       if ( ml.empty() )
       {
         ums[ current_queue ] = ZEROED;
-        std::cout << "dupa!" << std::endl;
+        ml.clear();
       }
-      ml.erase( it );
+      std::cout << "read " << ( ( m->d == END ) ? "END" : "SH..." ) << "; " 
+        << "address: " << (unsigned long)&ml << ", size: " << ml.size() << std::endl;
       return true;
     }
   }
   else
   {
+    get_writeable_queue();
     return false;
   }
 }
