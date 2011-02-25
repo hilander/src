@@ -1,5 +1,8 @@
 #include "scheduler_tools.hpp"
 #include "message_queue.hpp"
+#include <iostream>
+
+using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
 // raw_pipe                                                                   //
@@ -17,27 +20,27 @@ scheduler::raw_pipe::init()
 {
 }
 
-int
-scheduler::raw_pipe::write_in( void* sp, size_t s )
+bool
+scheduler::raw_pipe::write_in( spawned_data* sp )
 {
-  return write( in[1], sp, s );
+  return in.write( sp );
 }
 
-int 
-scheduler::raw_pipe::read_in( void* sp, size_t s )
+bool 
+scheduler::raw_pipe::read_in( spawned_data* sp )
 {
-  return read( in[0], sp, s );
+  return in.read( sp );
 }
 
-int 
-scheduler::raw_pipe::write_out( void* sp, size_t s )
+bool 
+scheduler::raw_pipe::write_out( spawned_data* sp )
 { 
 
-  return write( out[1], sp, s );
+  return out.write( sp );
 }
 
-int 
-scheduler::raw_pipe::read_out( void* sp, size_t s )
+bool 
+scheduler::raw_pipe::read_out( spawned_data* sp )
 {
-  return read( out[0], sp, s );
+  return out.read( sp );
 }

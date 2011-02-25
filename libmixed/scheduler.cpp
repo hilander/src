@@ -1,3 +1,4 @@
+#include <iostream>
 #include "scheduler.hpp"
 #include "userspace_scheduler.hpp"
 
@@ -159,15 +160,7 @@ scheduler::ueber_scheduler::run()
 bool 
 scheduler::ueber_scheduler::get_from_pipe(scheduler::raw_pipe* rp, scheduler::spawned_data* sp)
 {
-  int len = 0;
-  //do
-  //{
-    len = rp->read_out( (void*)sp, sizeof(spawned_data) );
-    //}
-    //while ( errno == EAGAIN )
-    //  ;
-    //                      std::cout << "wtf?" << rp->out[0] << std::endl;
-    return ( ( len == 0 ) ? false : true );
+    return rp->read_out( sp );
 }
 
 bool 
