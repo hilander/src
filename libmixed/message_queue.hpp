@@ -2,6 +2,7 @@
 #define MESSAGE_QUEUE_HPP
 
 #include <list>
+#include <pthread.h>
 
 namespace scheduler
 {
@@ -12,18 +13,19 @@ const int queue_count = 2;
 
 class message_queue
 {
-    private:
-        enum use_mode { ZEROED, READABLE, WRITEABLE };
+    public:
         typedef std::list< spawned_data* > messages_t;
-        messages_t mls[ queue_count ];
-        use_mode ums[ queue_count ];
-        int get_readable_queue();
-        int get_writeable_queue();
+
+    private:
+        messages_t _messages;
+        pthread_mutex_t _mutex;
+        pthread_mutexattr_t _mattrs;
+
     public:
         message_queue();
         ~message_queue();
         void clean();
-        // TODO:
+
         bool read( spawned_data* m );
         bool write( spawned_data* m );
 };

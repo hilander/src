@@ -128,6 +128,7 @@ scheduler::ueber_scheduler::run()
         {
           case SPAWN_CONFIRMED:
             blocked_num--;
+            std::cout << "SPAWN_CONFIRMED" << std::endl;
             //std::cout << "::" << (*pipe_it)->out[0] << ":: " << std::cout.flush();
             break;
             
