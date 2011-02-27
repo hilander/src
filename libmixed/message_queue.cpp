@@ -25,16 +25,22 @@ scheduler::message_queue::write( spawned_data* m )
 {
   bool rv = true;
 
-  pthread_mutex_lock( &_mutex );
-  try
-  {
-    _messages.push_back( m );
-  }
-  catch ( std::bad_alloc )
-  {
-    rv = false;
-  }
-  pthread_mutex_unlock( &_mutex );
+  if ( pthread_mutex_trylock( &_mutex ) == 0 )
+	{
+		try
+		{
+			_messages.push_back( m );
+		}
+		catch ( std::bad_alloc )
+		{
+			rv = false;
+		}
+		pthread_mutex_unlock( &_mutex );
+	}
+	else
+	{
+		rv = false;
+	}
 
   return rv;
 }
@@ -44,21 +50,27 @@ scheduler::message_queue::read( spawned_data* m )
 {
   bool rv = true;
 
-  pthread_mutex_lock( &_mutex );
-  if ( ! _messages.empty() )
-  {
-		m->d = _messages.front()->d;
-		m->p = _messages.front()->p;
-		if ( m->d >= BLOCK && m->d <= NOTHING )
+  if ( pthread_mutex_trylock( &_mutex ) == 0 )
+	{
+		if ( ! _messages.empty() )
 		{
-			_messages.pop_front();
+			m->d = _messages.front()->d;
+			m->p = _messages.front()->p;
+			if ( m->d >= BLOCK && m->d <= NOTHING )
+			{
+				_messages.pop_front();
+			}
 		}
-  }
-  else
-  {
-    rv = false;
-  }
-  pthread_mutex_unlock( &_mutex );
+		else
+		{
+			rv = false;
+		}
+		pthread_mutex_unlock( &_mutex );
+	}
+	else
+	{
+		rv = false;
+	}
 
   return rv;
 }
