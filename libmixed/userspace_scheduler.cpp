@@ -78,6 +78,9 @@ scheduler::userspace_scheduler::run()
       {
         ready.dispose();
         workload--;
+				//std::cout << "userspace_scheduler::run: "
+				//	<< "workload: " << workload
+				//	<< std::endl;
       }
     }
   }
@@ -92,17 +95,17 @@ scheduler::userspace_scheduler::start()
 void 
 scheduler::userspace_scheduler::spawn(fiber::fiber::ptr fiber)
 {
-  spawned_data sp;
-  sp.d = SPAWN;
-  sp.p = fiber;
+  spawned_data* sp = new spawned_data();
+  sp->d = SPAWN;
+  sp->p = fiber;
   bool written;
   do
   {
-    written = message_device->write_in( &sp );
+    written = message_device->write_in( sp );
   }
   while ( !written )
 		; // a co!
-	std::cout << "spawn: Done." << std::endl;
+	//std::cout << "spawn: Done." << std::endl;
 }
 
 
@@ -119,17 +122,17 @@ scheduler::userspace_scheduler::spawn(void* f, int )
   // Obciążenie: +1;
   workload++;
   //std::cout << workload << std::endl;
-  spawned_data sp;
-  sp.d = SPAWN_CONFIRMED;
-  sp.p = f;
+  spawned_data* sp = new spawned_data();
+  sp->d = SPAWN_CONFIRMED;
+  sp->p = f;
   bool written;
   do
   {
-    written = message_device->write_out( &sp );
+    written = message_device->write_out( sp );
   }
   while ( !written )
     ;
-	std::cout << "spawn: confirmed." << std::endl;
+	//std::cout << "spawn: confirmed." << std::endl;
 }
 
 bool 
@@ -186,21 +189,36 @@ void
 scheduler::userspace_scheduler::read_messages()
 {
   size_t record_size = sizeof( sizeof(data_kind) + sizeof(void*) );
-  char buf[ record_size];
+  spawned_data sp = { NOTHING, 0 };
   
-  if ( message_device->read_in( reinterpret_cast< spawned_data* >( buf ) ) )
+  if ( message_device->read_in( &sp ) )
   {
-    spawned_data *sp = (spawned_data*) buf;
-    switch (sp->d)
+		//std::cout << "."; std::cout.flush();
+		spawned_data response;
+    switch (sp.d)
     {
       case END:
         finish();
+				//std::cout << "userspace_scheduler::read_messages: End requested." 
+				//	<< std::endl; 
         break;
       case SPAWN:
-        spawn(sp->p, 0);
+        spawn(sp.p, 0);
+				response.d = SPAWN_CONFIRMED;
+				response.p = 0;
+				//std::cout << "userspace_scheduler::read_messages: Confirmation " 
+				//	<< ( message_device->write_out( &response ) ? "sent." : "not sent" ) 
+				//	<< std::endl; 
         break;
       default:
+				//std::cout << "userspace_scheduler::read_messages: Something came: " 
+				//	<< std::endl 
+				//	<< "data: " << sp.d
+				//	<< std::endl 
+				//	<< "pointer: " << sp.p
+				//	<< std::endl; 
         break;
     }
+		//std::cout << "?"; std::cout.flush();
   }
 }

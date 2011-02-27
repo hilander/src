@@ -47,8 +47,12 @@ scheduler::message_queue::read( spawned_data* m )
   pthread_mutex_lock( &_mutex );
   if ( ! _messages.empty() )
   {
-    m = _messages.front();
-    _messages.pop_front();
+		m->d = _messages.front()->d;
+		m->p = _messages.front()->p;
+		if ( m->d >= BLOCK && m->d <= NOTHING )
+		{
+			_messages.pop_front();
+		}
   }
   else
   {

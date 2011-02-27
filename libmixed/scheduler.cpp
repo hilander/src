@@ -128,14 +128,21 @@ scheduler::ueber_scheduler::run()
         {
           case SPAWN_CONFIRMED:
             blocked_num--;
-            std::cout << "SPAWN_CONFIRMED" << std::endl;
-            //std::cout << "::" << (*pipe_it)->out[0] << ":: " << std::cout.flush();
+            //std::cout << "ueber_scheduler::run: "
+						//	<< "SPAWN_CONFIRMED" 
+						//	<< std::endl;
             break;
             
           case BLOCK:
+            //std::cout << "ueber_scheduler::run: "
+						//	<< "BLOCK" 
+						//	<< std::endl;
             break;
             
           default:
+            //std::cout << "ueber_scheduler::run: "
+						//	<< "WHAT:) " << pc.d
+						//	<< std::endl;
             break;
         }
       }
