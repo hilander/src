@@ -24,6 +24,7 @@ enum data_kind
 	END,
 	SPAWN,
 	SPAWN_CONFIRMED,
+  FIBER_SPECIFIC,
 	NOTHING
 };
 

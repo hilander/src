@@ -37,13 +37,28 @@
 namespace scheduler
 {
 
+/** \brief Interfejs który musi implementować każdy planista.
+ */
+class abstract
+{
+  public:
+    virtual void spawn( fiber::fiber::ptr fiber ) = 0;
+
+    virtual void send( fiber::fiber::ptr fiber, spawned_data::ptr data ) = 0;
+
+		virtual void receive( fiber::fiber::ptr fiber, spawned_data::ptr data ) = 0;
+
+};
+
 /** \brief Planista U_SCH.
  */
-class ueber_scheduler : public libcoro::coroutine
+class ueber_scheduler : public libcoro::coroutine, public abstract
 {
 	public:
 		ueber_scheduler();
 
+    ~ueber_scheduler();
+    
 	public:
 		static void* go ( void* obj );
 
@@ -67,18 +82,21 @@ class ueber_scheduler : public libcoro::coroutine
 
 		virtual void start();
 
-		virtual void spawn( fiber::fiber::ptr fiber );
-
 		virtual bool empty();
 
-        void join_u_sch();
+    void join_u_sch();
 
-        libmanager::manager::ptr get_manager();
+    libmanager::manager::ptr get_manager();
 
-        void move_to_blocked( fiber::fiber::ptr /*f*/ );
+    void move_to_blocked( fiber::fiber::ptr /*f*/ );
 
-        ~ueber_scheduler();
-    
+  public: // Interfejs abstract:
+		virtual void spawn( fiber::fiber::ptr fiber );
+
+    virtual void send( fiber::fiber::ptr fiber, spawned_data::ptr data );
+
+		virtual void receive( fiber::fiber::ptr fiber, spawned_data::ptr data );
+
 	private:
 		static void* stub_go( void* obj );
 

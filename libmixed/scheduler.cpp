@@ -187,23 +187,6 @@ scheduler::ueber_scheduler::start()
   ::pthread_create( &stub_thread, &stub_attr, &ueber_scheduler::stub_go, ( void* )this );
 }
 
-void 
-scheduler::ueber_scheduler::spawn(fiber::fiber::ptr fiber)
-{
-  // znajdź uls z najmniejszym workloadem i zażądaj od niego inicjalizacji włókna.
-  std::priority_queue< userspace_scheduler*, std::vector<userspace_scheduler*>, uls_comp > q;
-  userspace_scheduler::list::iterator it;
-  for ( it = schedulers.begin();
-  it != schedulers.end();
-  it++
-  )
-  {
-    q.push( *it );
-  }
-  q.top()->spawn( fiber );
-  blocked_num++;
-}
-
 bool 
 scheduler::ueber_scheduler::empty()
 {
@@ -242,4 +225,35 @@ void* scheduler::ueber_scheduler::stub_go(void* obj)
   ueber_scheduler::ueber_scheduler* scheduler_obj = ( ueber_scheduler::ueber_scheduler* )obj;
   pthread_barrier_wait( &scheduler_obj->barrier );
   return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Inherited from scheduler::abstract                                          /
+////////////////////////////////////////////////////////////////////////////////
+
+void 
+scheduler::ueber_scheduler::spawn(fiber::fiber::ptr fiber)
+{
+  // znajdź uls z najmniejszym workloadem i zażądaj od niego inicjalizacji włókna.
+  std::priority_queue< userspace_scheduler*, std::vector<userspace_scheduler*>, uls_comp > q;
+  userspace_scheduler::list::iterator it;
+  for ( it = schedulers.begin();
+  it != schedulers.end();
+  it++
+  )
+  {
+    q.push( *it );
+  }
+  q.top()->spawn( fiber );
+  blocked_num++;
+}
+
+void
+scheduler::ueber_scheduler::send( fiber::fiber::ptr fiber, spawned_data::ptr data )
+{
+}
+
+void
+scheduler::ueber_scheduler::receive( fiber::fiber::ptr fiber, spawned_data::ptr data )
+{
 }

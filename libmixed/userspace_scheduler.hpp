@@ -13,6 +13,7 @@
 namespace scheduler
 {
 
+class abstract;
 class ueber_scheduler;
 /** \brief Planista S_ULT.
  *
