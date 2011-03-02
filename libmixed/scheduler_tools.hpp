@@ -34,6 +34,7 @@ struct spawned_data
     typedef spawned_data* ptr;
     data_kind d;
     void* p;
+		fiber::fiber* f;
 };
 
 /** \brief <i>Surowy</i> kanał do komunikacji.

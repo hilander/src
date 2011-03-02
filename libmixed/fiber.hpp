@@ -38,6 +38,8 @@ class fiber : public libcoro::coroutine
     
   public: 
     bool send( scheduler::spawned_data*& message );
+
+		bool receive( scheduler::spawned_data*& message );
     
   public:
     libcoro::state_controller state;

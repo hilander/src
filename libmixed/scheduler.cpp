@@ -248,12 +248,14 @@ scheduler::ueber_scheduler::spawn(fiber::fiber::ptr fiber)
   blocked_num++;
 }
 
-void
-scheduler::ueber_scheduler::send( fiber::fiber::ptr fiber, spawned_data::ptr data )
+bool
+scheduler::ueber_scheduler::send( spawned_data::ptr data )
 {
+	return true;
 }
 
-void
-scheduler::ueber_scheduler::receive( fiber::fiber::ptr fiber, spawned_data::ptr data )
+bool
+scheduler::ueber_scheduler::receive( spawned_data::ptr data )
 {
+	return true;
 }

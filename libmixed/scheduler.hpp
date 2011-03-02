@@ -44,9 +44,9 @@ class abstract
   public:
     virtual void spawn( fiber::fiber::ptr fiber ) = 0;
 
-    virtual void send( fiber::fiber::ptr fiber, spawned_data::ptr data ) = 0;
+    virtual bool send( spawned_data::ptr data ) = 0;
 
-		virtual void receive( fiber::fiber::ptr fiber, spawned_data::ptr data ) = 0;
+		virtual bool receive( spawned_data::ptr data ) = 0;
 
 };
 
@@ -93,9 +93,9 @@ class ueber_scheduler : public libcoro::coroutine, public abstract
   public: // Interfejs abstract:
 		virtual void spawn( fiber::fiber::ptr fiber );
 
-    virtual void send( fiber::fiber::ptr fiber, spawned_data::ptr data );
+    virtual bool send( spawned_data::ptr data );
 
-		virtual void receive( fiber::fiber::ptr fiber, spawned_data::ptr data );
+		virtual bool receive( spawned_data::ptr data );
 
 	private:
 		static void* stub_go( void* obj );
