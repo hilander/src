@@ -118,33 +118,23 @@ scheduler::ueber_scheduler::run()
     pipe_it != pipes.end();
     pipe_it++ )
     {
-      //std::cout << "started" << std::endl;
       spawned_data pc;
       pc.d = NOTHING;
-      if ( read_and_interpret( *pipe_it, &pc ) )
+      while ( read_and_interpret( *pipe_it, &pc ) )
       {
-        //std::cout << "started.." << std::endl;
         switch ( pc.d )
         {
           case SPAWN_CONFIRMED:
             blocked_num--;
-            //std::cout << "ueber_scheduler::run: "
-						//	<< "SPAWN_CONFIRMED" 
-						//	<< std::endl;
             break;
             
           case BLOCK:
-            //std::cout << "ueber_scheduler::run: "
-						//	<< "BLOCK" 
-						//	<< std::endl;
             break;
             
           default:
-            //std::cout << "ueber_scheduler::run: "
-						//	<< "WHAT:) " << pc.d
-						//	<< std::endl;
             break;
         }
+				pc.d = NOTHING;
       }
     }
     
@@ -248,6 +238,8 @@ scheduler::ueber_scheduler::spawn(fiber::fiber::ptr fiber)
   blocked_num++;
 }
 
+/** \brief userspace_scheduler nie znalazł u siebie odpowiedniego wątku - trzeba zrobić broadcast.
+ */
 bool
 scheduler::ueber_scheduler::send( spawned_data::ptr data )
 {

@@ -1,4 +1,5 @@
 #include <fiber.hpp>
+#include <scheduler.hpp>
 #include <scheduler_tools.hpp>
 
 fiber::fiber::fiber()
@@ -26,6 +27,16 @@ fiber::fiber::run()
 bool
 fiber::fiber::send( scheduler::spawned_data*& message )
 {
-  bool rv = false;
+  bool rv;
+
+	if ( _supervisor == 0 )
+	{
+		rv = _supervisor->send( message );
+	}
+	else
+	{
+		rv = false;
+	}
+
   return rv;
 }
