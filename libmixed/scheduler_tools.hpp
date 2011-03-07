@@ -34,7 +34,11 @@ struct spawned_data
     typedef spawned_data* ptr;
     data_kind d;
     void* p;
-		fiber::fiber* f;
+		fiber::fiber* sender;
+		fiber::fiber* receiver;
+
+	public:
+		static void rewrite( spawned_data::ptr target, spawned_data::ptr source );
 };
 
 /** \brief <i>Surowy</i> kanał do komunikacji.

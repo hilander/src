@@ -9,11 +9,12 @@
 #include <queue>
 #include <vector>
 
-#include "manager.hpp"
-#include "fiber.hpp"
-#include "container.hpp"
-#include "scheduler_tools.hpp"
-#include "userspace_scheduler.hpp"
+#include <manager.hpp>
+#include <fiber.hpp>
+#include <container.hpp>
+#include <scheduler_tools.hpp>
+#include <userspace_scheduler.hpp>
+#include <scheduler_interface.hpp>
 
 /** \brief Przestrzeń nazw planisty wątków.
  *
@@ -36,19 +37,6 @@
  */
 namespace scheduler
 {
-
-/** \brief Interfejs który musi implementować każdy planista.
- */
-class abstract
-{
-  public:
-    virtual void spawn( fiber::fiber::ptr fiber ) = 0;
-
-    virtual bool send( spawned_data::ptr data ) = 0;
-
-		virtual bool receive( spawned_data::ptr data ) = 0;
-
-};
 
 /** \brief Planista U_SCH.
  */

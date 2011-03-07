@@ -40,3 +40,15 @@ fiber::fiber::send( scheduler::spawned_data*& message )
 
   return rv;
 }
+
+void
+fiber::fiber::receive_data( scheduler::spawned_data*& d )
+{
+  incoming_messages.push_back( d );
+}
+
+void
+fiber::fiber::send_data( scheduler::spawned_data*& d )
+{
+
+}

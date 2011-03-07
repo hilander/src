@@ -23,6 +23,7 @@ class container
 		void dispose( Item* thread );
 		bool empty();
 		void insert( Item* thread );
+    bool exists( Item* elem );
 };
 
 /** Opakowane listy dwukierunkowe.
@@ -85,6 +86,21 @@ class container < Item, std::list< Item* > >
 		{
 			return threads.size();
 		}
+
+    bool exists( Item* elem )
+    {
+      for ( l_it i = threads.begin();
+            i != threads.end();
+            i++ )
+      {
+        if ( (*i) == elem )
+        {
+          return true;
+        }
+      }
+
+      return false;
+    }
 };
 
 /** \brief Opakowane drzewo czerwono-czarne z&nbsp;powtórzeniami.
@@ -104,10 +120,11 @@ class container < Item, std::map< Item*, Item* > >
 		::clock_t start_tick;
 
 	public:
-	container()
-	{
-		current = threads.begin();
-	}
+    container()
+    {
+      current = threads.begin();
+    }
+
 		Item* get()
 		{
 			Item* thread = 0;
@@ -148,6 +165,18 @@ class container < Item, std::map< Item*, Item* > >
 		{
 			return threads.size();
 		}
+    
+    bool exists( Item* elem )
+    {
+      if ( threads.find( elem ) != threads.end() )
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+    }
 };
 
 }

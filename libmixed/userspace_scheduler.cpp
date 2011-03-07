@@ -152,6 +152,7 @@ scheduler::userspace_scheduler::get_workload()
 /*
 * Technicznie: przerzuć wątek do puli zablokowanych wątków,
 * która znajduje się w&nbsp;ueber_scheduler.
+* TODO
 */
 void 
 scheduler::userspace_scheduler::block(fiber::fiber::ptr f)
@@ -161,6 +162,8 @@ scheduler::userspace_scheduler::block(fiber::fiber::ptr f)
   
 }
 
+/** Niebezpieczne złogi!
+ */
 void 
 scheduler::userspace_scheduler::send_message(scheduler::data_kind k, void* d)
 {
@@ -182,7 +185,7 @@ scheduler::userspace_scheduler::send_message(scheduler::data_kind k, void* d)
     written = message_device->write_out( reinterpret_cast< spawned_data* >( buf ) );
   }
   while ( !written )
-		; // a co!
+		;
 }
 
 void 
@@ -193,32 +196,58 @@ scheduler::userspace_scheduler::read_messages()
   
   if ( message_device->read_in( &sp ) )
   {
-		//std::cout << "."; std::cout.flush();
 		spawned_data response;
     switch (sp.d)
     {
       case END:
         finish();
-				//std::cout << "userspace_scheduler::read_messages: End requested." 
-				//	<< std::endl; 
         break;
+
       case SPAWN:
         spawn(sp.p, 0);
 				response.d = SPAWN_CONFIRMED;
 				response.p = 0;
-				//std::cout << "userspace_scheduler::read_messages: Confirmation " 
-				//	<< ( message_device->write_out( &response ) ? "sent." : "not sent" ) 
-				//	<< std::endl; 
         break;
+
+			case FIBER_SPECIFIC:
+				send( &sp );
+				break;
+
       default:
-				//std::cout << "userspace_scheduler::read_messages: Something came: " 
-				//	<< std::endl 
-				//	<< "data: " << sp.d
-				//	<< std::endl 
-				//	<< "pointer: " << sp.p
-				//	<< std::endl; 
         break;
     }
-		//std::cout << "?"; std::cout.flush();
   }
 }
+
+bool 
+scheduler::userspace_scheduler::send( spawned_data::ptr data )
+{
+  if ( data->receiver != 0 ) 
+  {
+		if ( ready.exists( data->receiver ) ) 
+		{
+			// Receiver fiber must read its data:
+			data->receiver->receive_data( data );
+			return true;
+		}
+		else
+		{
+			return message_device->write_out( data );
+		}
+  }
+  return false;
+}
+
+// not needed?
+bool
+scheduler::userspace_scheduler::receive( spawned_data::ptr data )
+{
+  return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Only for debug purposes                                                     /
+////////////////////////////////////////////////////////////////////////////////
+
+// #ifdef USERSPACE_SCHEDULER_DEBUG
+

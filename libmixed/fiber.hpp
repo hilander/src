@@ -3,6 +3,7 @@
 
 #include <coroutine.hpp>
 #include <state_controller.hpp>
+#include <scheduler_tools.hpp>
 
 namespace scheduler
 {
@@ -40,12 +41,18 @@ class fiber : public libcoro::coroutine
     bool send( scheduler::spawned_data*& message );
 
 		bool receive( scheduler::spawned_data*& message );
+
+		void receive_data( scheduler::spawned_data*& d );
+
+		void send_data( scheduler::spawned_data*& d );
     
   public:
     libcoro::state_controller state;
 
   protected:
     scheduler::abstract* _supervisor;
+
+		std::list< scheduler::spawned_data* > incoming_messages;
 };
 
 }

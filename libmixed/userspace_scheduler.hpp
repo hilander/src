@@ -6,20 +6,21 @@
 #include <factory.hpp>
 #include <list>
 #include <iostream>
-#include "container.hpp"
-#include "scheduler_tools.hpp"
-#include "manager.hpp"
+#include <container.hpp>
+#include <scheduler_tools.hpp>
+#include <manager.hpp>
+#include <scheduler_interface.hpp>
 
 namespace scheduler
 {
 
-class abstract;
 class ueber_scheduler;
+
 /** \brief Planista S_ULT.
  *
  * Klasa zarządcy wątków przestrzeni użytkownika.
  */
-class userspace_scheduler : public libcoro::coroutine
+class userspace_scheduler : public libcoro::coroutine, public abstract
 {
 	public:
 		typedef userspace_scheduler* ptr;
@@ -61,11 +62,6 @@ class userspace_scheduler : public libcoro::coroutine
 		 */
 		virtual void start();
 
-		/** \brief Utwórz wątek i&nbsp;oddaj go w&nbsp;opiekę planiście.
-		 * Ta metoda jest wystawiona dla użytkownika: wysyła żądanie do uls.
-		 */
-		virtual void spawn( fiber::fiber::ptr fiber );
-
 		/** \brief Utwórz wątek (uls side).
 		 * Ta metoda nie może byc wołana z zewnątrz uls-a, użyj spawn(fiber::fiber::ptr fiber).
 		 */
@@ -86,6 +82,17 @@ class userspace_scheduler : public libcoro::coroutine
 		void send_message( data_kind k, void* d );
 
 		void read_messages();
+
+  public: // metody wymagane przez interfejs scheduler::abstract
+
+    /** \brief Utwórz wątek i&nbsp;oddaj go w&nbsp;opiekę planiście.
+     * Ta metoda jest wystawiona dla użytkownika: wysyła żądanie do uls.
+     */
+    virtual void spawn( fiber::fiber::ptr fiber );
+
+    virtual bool send( spawned_data::ptr data );
+
+		virtual bool receive( spawned_data::ptr data );
 
 	private:
 		libcoro::coroutine::ptr base_coroutine;

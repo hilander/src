@@ -128,6 +128,10 @@ scheduler::ueber_scheduler::run()
             blocked_num--;
             break;
             
+          case FIBER_SPECIFIC:
+						send( &pc );
+            break;
+            
           case BLOCK:
             break;
             
@@ -243,6 +247,15 @@ scheduler::ueber_scheduler::spawn(fiber::fiber::ptr fiber)
 bool
 scheduler::ueber_scheduler::send( spawned_data::ptr data )
 {
+	std::list< raw_pipe* >::iterator i;
+	for ( i = pipes.begin();
+			  i != pipes.end();
+				i++ )
+	{
+		spawned_data *td = new spawned_data();
+		spawned_data::rewrite( td, data );
+		(*i)->write_in( td );
+	}
 	return true;
 }
 
