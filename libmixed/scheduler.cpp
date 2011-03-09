@@ -41,7 +41,7 @@ void* scheduler::ueber_scheduler::go(void* obj)
 }
 
 void 
-scheduler::ueber_scheduler::init()
+scheduler::ueber_scheduler::init( std::list< userspace_scheduler* >* local_schedulers )
 {
   base_coroutine = libcoro::factory::create_coroutine();
   libcoro::factory::assign_coroutine( this );
@@ -60,6 +60,42 @@ scheduler::ueber_scheduler::init()
   
   // pthreads end
   
+  if ( local_schedulers == 0 )
+  {
+      create_local_schedulers();
+  }
+  else
+  {
+      create_local_schedulers( local_schedulers );
+  }
+  blocked_num = 0;
+}
+
+void
+scheduler::ueber_scheduler::create_local_schedulers( std::list< userspace_scheduler* >* list_ )
+{
+    //Utwórz tyle planistów ULT, ile jest dostępnych rdzeni dla procesu:
+    for ( std::list< userspace_scheduler* >::iterator i = list_->begin();
+          i != list_->end();
+          i++ )
+    {
+        userspace_scheduler::ptr s = *i ;
+
+        // Dla każdego userspace scheduler-a utwórz dwie rurki:
+        // 1. Do zapisu (in): zapisuje ueber_scheduler, odczytuje userspace_scheduler
+        // 2. Do odczytu (out)
+        raw_pipe* srp = new raw_pipe();
+        srp->init();
+        pipes.push_back(srp);
+
+        s->init(srp);
+        schedulers.push_back( s );
+    }
+}
+
+void
+scheduler::ueber_scheduler::create_local_schedulers()
+{
   //Utwórz tyle planistów ULT, ile jest dostępnych rdzeni dla procesu:
   cpu_set_t cs;
   int rv = sched_getaffinity(0, sizeof(cs), &cs);
@@ -80,7 +116,6 @@ scheduler::ueber_scheduler::init()
       schedulers.push_back( s );
     }
   }
-  blocked_num = 0;
 }
 
 bool 

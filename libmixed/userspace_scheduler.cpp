@@ -6,6 +6,24 @@ scheduler::userspace_scheduler::userspace_scheduler(ueber_scheduler* ptr)
 {
 }
 
+/* Tylko do debugowania */
+scheduler::userspace_scheduler::userspace_scheduler(ueber_scheduler* ptr, std::list< fiber::fiber::ptr > fibers_ )
+: workload(0), us(ptr)
+{
+    for ( std::list< fiber::fiber::ptr >::iterator i = fibers_.begin();
+          i != fibers_.end();
+          i++ )
+    {
+        fiber::fiber::ptr f = *i;
+        manager->get( f );
+
+        ready.insert( f );
+
+        // Obciążenie: +1;
+        workload++;
+    }
+}
+
 void 
 scheduler::userspace_scheduler::init( raw_pipe::ptr message_pipe )
 {
@@ -30,7 +48,7 @@ scheduler::userspace_scheduler::init( raw_pipe::ptr message_pipe )
         message_device = 0;
     }
     scheduler_end = false;
-    workload = 0;
+    workload = ready.size();
 
     pthread_attr_init( &uls_attr );
     // inicjalizacja zakończona: można uruchomić wątek, w którym będzie działać scheduler.

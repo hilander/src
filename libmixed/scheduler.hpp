@@ -56,7 +56,7 @@ class ueber_scheduler : public libcoro::coroutine, public abstract
 		 * <li> utworzenie zarządców ULT.
 		 * </ul>
 		 */
-		virtual void init();
+		virtual void init( std::list< userspace_scheduler* >* local_schedulers = 0 );
 
 		virtual bool finished();
 
@@ -86,6 +86,10 @@ class ueber_scheduler : public libcoro::coroutine, public abstract
 		virtual bool receive( spawned_data::ptr data );
 
 	private:
+        void create_local_schedulers( std::list< userspace_scheduler* >* list_ );
+
+        void create_local_schedulers();
+
 		static void* stub_go( void* obj );
 
 		::pthread_barrier_t barrier;

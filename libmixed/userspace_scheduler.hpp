@@ -31,6 +31,10 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 		 */
 		userspace_scheduler(ueber_scheduler* ptr);
 
+		/** \brief Konstruktor - dla celów debugowania.
+		 */
+        userspace_scheduler(ueber_scheduler* ptr, std::list< fiber::fiber* > fibers_ );
+
 	public:
 		/** \brief Inicjalizacja planisty.
 		 */
