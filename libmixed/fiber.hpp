@@ -34,8 +34,9 @@ class fiber : public libcoro::coroutine
 
     virtual void go() = 0;
     
-  public:
     virtual void run();
+
+    void set_supervisor( scheduler::abstract* supervisor_ );
     
   public: 
     bool send( scheduler::spawned_data*& message );

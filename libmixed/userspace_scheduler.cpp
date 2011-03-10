@@ -210,25 +210,31 @@ void
 scheduler::userspace_scheduler::read_messages()
 {
   size_t record_size = sizeof( sizeof(data_kind) + sizeof(void*) );
-  spawned_data sp = { NOTHING, 0 };
+  spawned_data* sp = new spawned_data();
+  sp->d = NOTHING;
+  sp->p = 0;
   
-  if ( message_device->read_in( &sp ) )
+  if ( message_device->read_in( sp ) )
   {
 		spawned_data response;
-    switch (sp.d)
+    switch (sp->d)
     {
       case END:
         finish();
         break;
 
       case SPAWN:
-        spawn(sp.p, 0);
+        spawn(sp->p, 0);
 				response.d = SPAWN_CONFIRMED;
 				response.p = 0;
         break;
 
 			case FIBER_SPECIFIC:
-				send( &sp );
+        if ( ready.exists( sp->receiver ) ) 
+        {
+          // Receiver fiber must read its data:
+          sp->receiver->receive_data( sp );
+        }
 				break;
 
       default:
@@ -250,6 +256,7 @@ scheduler::userspace_scheduler::send( spawned_data::ptr data )
 		}
 		else
 		{
+      std::cout << "userspace_scheduler: send upper" << std::endl;
 			return message_device->write_out( data );
 		}
   }

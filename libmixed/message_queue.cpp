@@ -54,8 +54,7 @@ scheduler::message_queue::read( spawned_data* m )
 	{
 		if ( ! _messages.empty() )
 		{
-			m->d = _messages.front()->d;
-			m->p = _messages.front()->p;
+      scheduler::spawned_data::rewrite( m, _messages.front() );
 			if ( m->d >= BLOCK && m->d <= NOTHING )
 			{
 				_messages.pop_front();

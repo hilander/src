@@ -24,12 +24,18 @@ fiber::fiber::run()
   state.on_exit();
 }
 
+void 
+fiber::fiber::set_supervisor( scheduler::abstract* supervisor_ )
+{
+  _supervisor = supervisor_;
+}
+
 bool
 fiber::fiber::send( scheduler::spawned_data*& message )
 {
   bool rv;
 
-	if ( _supervisor == 0 )
+	if ( _supervisor != 0 )
 	{
 		rv = _supervisor->send( message );
 	}
@@ -38,6 +44,23 @@ fiber::fiber::send( scheduler::spawned_data*& message )
 		rv = false;
 	}
 
+  return rv;
+}
+
+bool
+fiber::fiber::receive( scheduler::spawned_data*& d )
+{
+  bool rv;
+  std::list< scheduler::spawned_data* >::iterator i = incoming_messages.begin();
+  if ( i == incoming_messages.end() )
+  {
+    rv = false;
+  }
+  else
+  {
+    scheduler::spawned_data::rewrite( d, *i );
+    rv = true;
+  }
   return rv;
 }
 
