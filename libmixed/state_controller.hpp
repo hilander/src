@@ -34,6 +34,9 @@ class state_controller
 
 		//public: // aliasy typów
 
+	public: // konstruktory
+		state_controller() { s = UNDEFINED; }
+
 	public: // metody
 
 		/// \brief Ustawia środowisko podczas blokowania koprocedury.

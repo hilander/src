@@ -2,13 +2,13 @@
 #include "scheduler.hpp"
 
 scheduler::userspace_scheduler::userspace_scheduler(ueber_scheduler* ptr)
-: workload(0), us(ptr)
+: workload(0), us(ptr), _ended( false )
 {
 }
 
 /* Tylko do debugowania */
 scheduler::userspace_scheduler::userspace_scheduler(ueber_scheduler* ptr, std::list< fiber::fiber::ptr > fibers_ )
-: workload(0), us(ptr)
+: workload(0), us(ptr), _ended( false )
 {
     for ( std::list< fiber::fiber::ptr >::iterator i = fibers_.begin();
           i != fibers_.end();
@@ -89,6 +89,7 @@ scheduler::userspace_scheduler::run()
     read_messages();
     
     fiber::fiber::ptr running = ready.get();
+		//std::cout << "userspace_scheduler::run(): get: " << (unsigned)running << std::endl;
     if ( running != 0 )
     {
       running->start(this);
@@ -96,12 +97,14 @@ scheduler::userspace_scheduler::run()
       {
         ready.dispose();
         workload--;
-				//std::cout << "userspace_scheduler::run: "
-				//	<< "workload: " << workload
-				//	<< std::endl;
+				if ( workload == 0 )
+				{
+					scheduler_end = true;
+				}
       }
     }
   }
+	_ended = true;
 }
 
 void 
@@ -270,6 +273,11 @@ scheduler::userspace_scheduler::receive( spawned_data::ptr data )
   return false;
 }
 
+bool
+scheduler::userspace_scheduler::ended()
+{
+	return _ended;
+}
 ////////////////////////////////////////////////////////////////////////////////
 // Only for debug purposes                                                     /
 ////////////////////////////////////////////////////////////////////////////////

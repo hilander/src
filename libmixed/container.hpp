@@ -3,6 +3,7 @@
 
 #include <map>
 #include <list>
+#include <iostream>
 
 namespace scheduler
 {
@@ -27,7 +28,7 @@ class container
 };
 
 /** Opakowane listy dwukierunkowe.
- */
+ * Chwilowo nieczynne :)
 template < typename Item >
 class container < Item, std::list< Item* > >
 {
@@ -102,6 +103,7 @@ class container < Item, std::list< Item* > >
       return false;
     }
 };
+ * _end_ class container < Item, std::list< Item* > > */
 
 /** \brief Opakowane drzewo czerwono-czarne z&nbsp;powtórzeniami.
  *
@@ -117,24 +119,32 @@ class container < Item, std::map< Item*, Item* > >
 	private:
 		map threads;
 		m_it current;
-		::clock_t start_tick;
 
 	public:
     container()
     {
-      current = threads.begin();
+			current = threads.begin();
     }
 
 		Item* get()
 		{
-			Item* thread = 0;
-			current = threads.begin();
-
-			if ( current != threads.end() )
+			if( threads.size() == 0 )
 			{
-				thread = ( *current ).second;
+				return 0;
 			}
-			return thread;
+			else
+			{
+				//std::cout << "container<map>::get(): threads.sise() = " << threads.size() << std::endl;
+				Item* thread = 0;
+				thread = ( *current ).second;
+				current++;
+				if ( current == threads.end() )
+				{
+					current = threads.begin();
+					//std::cout << "container<map>::get(): current <- threads.begin()" << std::endl;
+				}
+				return thread;
+			}
 		}
 
 		void suspend()
@@ -147,13 +157,17 @@ class container < Item, std::map< Item*, Item* > >
 		void dispose()
 		{
 			m_it tmp = current;
-			(*current).second = 0;
-			threads.erase( current );
+			(*tmp).second = 0;
+			threads.erase( tmp );
+			current = threads.begin();
 		}
 
 		void insert( Item* thread )
 		{
 			threads.insert( std::pair< Item*, Item* >( thread, thread ) );
+
+			//mini-reset:
+			current = threads.begin();
 		}
 
 		bool empty()

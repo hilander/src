@@ -183,7 +183,7 @@ scheduler::ueber_scheduler::run()
     it++
     )
     {
-      total_workload += (*it)->get_workload();
+      total_workload += (*it)->ended() ? 0 : 1;
     }
   } while ( (total_workload != 0) || (blocked_num != 0) ) ;
   for ( it = schedulers.begin();
@@ -289,7 +289,9 @@ scheduler::ueber_scheduler::send( spawned_data::ptr data )
 	{
 		spawned_data *td = new spawned_data();
 		spawned_data::rewrite( td, data );
-		(*i)->write_in( td );
+		while ( ! (*i)->write_in( td ) )
+		{
+		}
 	}
 	return true;
 }

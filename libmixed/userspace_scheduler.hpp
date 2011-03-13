@@ -87,6 +87,8 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 
 		void read_messages();
 
+		bool ended();
+
   public: // metody wymagane przez interfejs scheduler::abstract
 
     /** \brief Utwórz wątek i&nbsp;oddaj go w&nbsp;opiekę planiście.
@@ -110,6 +112,7 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 
 		::pthread_t uls_thread;
 		::pthread_attr_t uls_attr;
+		bool _ended;
 };
 
 }
