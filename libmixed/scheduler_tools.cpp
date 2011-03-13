@@ -37,24 +37,27 @@ scheduler::raw_pipe::init()
 bool
 scheduler::raw_pipe::write_in( spawned_data* sp )
 {
+	//std::cout << "in: "; std::cout.flush();
   return in.write( sp );
 }
 
 bool 
 scheduler::raw_pipe::read_in( spawned_data* sp )
 {
+	//std::cout << "in: "; std::cout.flush();
   return in.read( sp );
 }
 
 bool 
 scheduler::raw_pipe::write_out( spawned_data* sp )
 { 
-
+	//std::cout << "out: "; std::cout.flush();
   return out.write( sp );
 }
 
 bool 
 scheduler::raw_pipe::read_out( spawned_data* sp )
 {
+	//std::cout << "out: "; std::cout.flush();
   return out.read( sp );
 }

@@ -89,7 +89,6 @@ scheduler::userspace_scheduler::run()
     read_messages();
     
     fiber::fiber::ptr running = ready.get();
-		//std::cout << "userspace_scheduler::run(): get: " << (unsigned)running << std::endl;
     if ( running != 0 )
     {
       running->start(this);
@@ -97,13 +96,10 @@ scheduler::userspace_scheduler::run()
       {
         ready.dispose();
         workload--;
-				if ( workload == 0 )
-				{
-					scheduler_end = true;
-				}
       }
     }
   }
+	//std::cout << "userspace_scheduler::run(): ended." << std::endl;
 	_ended = true;
 }
 
@@ -126,7 +122,7 @@ scheduler::userspace_scheduler::spawn(fiber::fiber::ptr fiber)
   }
   while ( !written )
 		; // a co!
-	//std::cout << "spawn: Done." << std::endl;
+	//std::cout << "spawn(ueber): Done." << std::endl;
 }
 
 
@@ -259,7 +255,6 @@ scheduler::userspace_scheduler::send( spawned_data::ptr data )
 		}
 		else
 		{
-      std::cout << "userspace_scheduler: send upper" << std::endl;
 			return message_device->write_out( data );
 		}
   }

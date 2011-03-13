@@ -183,14 +183,34 @@ scheduler::ueber_scheduler::run()
     it++
     )
     {
-      total_workload += (*it)->ended() ? 0 : 1;
+      total_workload += (*it)->get_workload();
     }
+
+		// nie mam wątków do uruchomienia - pora kończyć.
+		if ( ( total_workload == 0 ) && ( blocked_num == 0 ) )
+		{
+			// poinformuj wszystkie worker schedulery o końcu pracy
+			spawned_data::ptr end_info = new spawned_data();
+			end_info->d = END;
+			send( end_info );
+		}
   } while ( (total_workload != 0) || (blocked_num != 0) ) ;
-  for ( it = schedulers.begin();
-  it != schedulers.end();
-  it++
-  )
-  (*it)->finish();
+
+	bool schedulers_have_finished_work;
+	do
+	{
+		schedulers_have_finished_work = true;
+		for ( it = schedulers.begin();
+				it != schedulers.end();
+				it++
+				)
+		{
+			schedulers_have_finished_work &= (*it)->ended();
+		}
+	}
+	while ( ! schedulers_have_finished_work )
+		;
+	
   //std::cout << "total workload: " << total_workload << ", blocked num: " << blocked_num << std::endl;
 }
 

@@ -27,15 +27,19 @@ scheduler::message_queue::write( spawned_data* m )
 
   if ( pthread_mutex_trylock( &_mutex ) == 0 )
 	{
+		//std::cout << "read: mutex_lock..."; std::cout.flush();
 		try
 		{
-			_messages.push_back( m );
+			spawned_data::ptr tmp = new spawned_data();
+			spawned_data::rewrite( tmp, m );
+			_messages.push_back( tmp );
 		}
 		catch ( std::bad_alloc )
 		{
 			rv = false;
 		}
 		pthread_mutex_unlock( &_mutex );
+		//std::cout << "mutex_UN_lock" << std::endl;
 	}
 	else
 	{
@@ -52,6 +56,7 @@ scheduler::message_queue::read( spawned_data* m )
 
   if ( pthread_mutex_trylock( &_mutex ) == 0 )
 	{
+		//std::cout << "read: mutex_lock..."; std::cout.flush();
 		if ( ! _messages.empty() )
 		{
       scheduler::spawned_data::rewrite( m, _messages.front() );
@@ -65,6 +70,7 @@ scheduler::message_queue::read( spawned_data* m )
 			rv = false;
 		}
 		pthread_mutex_unlock( &_mutex );
+		//std::cout << "mutex_UN_lock" << std::endl;
 	}
 	else
 	{
