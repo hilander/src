@@ -10,7 +10,7 @@ set ( LIBMIXED_SOURCES
   scheduler_tools.cpp
   message_queue.cpp
 	socket.cpp
-	mutex.cpp
+	mutex_trylock.cpp
   )
 
 add_library ( libmixed SHARED ${LIBMIXED_SOURCES} )

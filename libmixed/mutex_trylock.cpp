@@ -1,4 +1,4 @@
-#include "mutex.hpp"
+#include "mutex_trylock.hpp"
 
 
 scheduler::mutex* operator* ( scheduler::mutex& ) throw ( scheduler::pointer_not_used )
