@@ -1,6 +1,7 @@
 #include <iostream>
 #include "scheduler.hpp"
 #include "userspace_scheduler.hpp"
+#include "socket.hpp"
 
 
 namespace scheduler
