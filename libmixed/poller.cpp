@@ -5,35 +5,55 @@
 #include <sys/epoll.h>
 
 using std::tr1::shared_ptr;
+using std::map;
+
 const int ignored_epoll_value = 1024;
 
-scheduler::socket::ptr scheduler::socket::instance( (scheduler::socket* )0 );
+// man epoll_wait(2):
+// timeout = 0: return immediately even if no events are available
+const int epoll_timeout = 0;
 
-bool
+//static member
+scheduler::poller::ptr scheduler::poller::instance( (scheduler::poller* )0 );
+
+map< int, uint32_t >
 scheduler::poller::poll()
 {
-	return true;
+  events.clear();
+
+  epoll_wait( _fd, watched_sockets, watched_sockets.size(), epoll_timeout );
+  
+	return events;
 }
 
 scheduler::poller::ptr
-scheduler::poller::get()
+scheduler::poller::get( shared_ptr< ::pthread_mutex_t >& m_ )
 {
 	if ( instance.get() == 0 )
 	{
-		instance.reset( new poller() );
+		instance.reset( new poller( m_ ) );
 		instance->init();
 	}
 
 	return instance;
 }
 
+scheduler::poller::poller( shared_ptr< ::pthread_mutex_t >& m_ )
+  : _m( m_ )
+{
+}
+
+scheduler::poller::poller()
+{}
+
+scheduler::poller::poller( scheduler::poller& )
+{}
+
 void
 scheduler::poller::init()
 {
   using scheduler::trylock;
 
-  trylock tl( new shared_ptr< ::pthread_mutex_t >() );
-  trylock* ptl = tl.get();
 	//init epoll
 	_fd = epoll_create( ignored_epoll_value );
 	if ( _fd == -1 )
@@ -46,9 +66,7 @@ bool
 scheduler::poller::add( int fd_ )
 {
 	shared_ptr< ::epoll_event > ev( new ::epoll_event() );
-	ev->data.ptr = 0;
 	ev->data.fd = fd_;
-	ev->events = EPOLLIN | EPOLLOUT;
 
 	if ( ::epoll_ctl( _fd, EPOLL_CTL_ADD, fd_, ev.get() ) == 0 )
 	{
@@ -64,4 +82,6 @@ scheduler::poller::add( int fd_ )
 void
 scheduler::poller::remove( int fd_ )
 {
+  map< int, std::tr1::shared_ptr< ::epoll_event > >::iterator it = watched_sockets.find( fd_ );
+  watched_sockets.erase( it );
 }

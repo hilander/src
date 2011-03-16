@@ -3,7 +3,9 @@
 
 #include <tr1/memory>
 #include <map>
+#include <vector>
 #include <sys/epoll.h>
+#include <pthread.h>
 
 namespace scheduler
 {
@@ -28,26 +30,38 @@ class poller
 
 	public:
 
-		static ptr get();
+		static ptr get( std::tr1::shared_ptr< ::pthread_mutex_t >& m_ );
 
 		/** \brief Triggeruj epoll-a: sprawdź, które sockety coś zapisały / odczytały
 		 * \return true, gdy co najmniej jeden z socketów zmienił stan; false wpw.
 		 */
-		bool poll();
+		std::map< int, uint32_t > poll();
 
 		bool add( int fd_ );
 
 		void remove( int fd_ );
 
 	public:
+
 		void init();
 
+  private:
+
+    poller();
+
+    poller( poller& );
+
+    poller( std::tr1::shared_ptr< ::pthread_mutex_t >& m_ );
+
 	private:
+
 		static poller::ptr instance;
 
 	private:
 		int _fd;
-		std::map< int, std::tr1::shared_ptr< ::epoll_event > > watched_sockets;
+		std::vector< std::tr1::shared_ptr< ::epoll_event > > watched_sockets;
+    std::tr1::shared_ptr< ::pthread_mutex_t > _m;
+    std::map< int, uint32_t > events;
 };
 
 }

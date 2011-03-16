@@ -12,26 +12,27 @@ class pointer_not_used : public std::exception
 {
 };
 
-class mutex
+class trylock
 {
 	public:
 
-		mutex( std::tr1::shared_ptr< ::pthread_mutex_t > m_ );
+		trylock( std::tr1::shared_ptr< ::pthread_mutex_t > m_ );
 
-		~mutex();
+		~trylock();
 
-		bool trylock();
+		bool try_lock();
 
 	private:
 
-		mutex( const mutex& );
+		trylock( const trylock& );
 
 		bool _locked;
 
 		std::tr1::shared_ptr< ::pthread_mutex_t > _m;
+    
+    trylock* operator* ();
 };
 
-mutex* operator* ( mutex );
 
 }
 

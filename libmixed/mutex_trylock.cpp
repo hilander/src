@@ -1,18 +1,20 @@
 #include "mutex_trylock.hpp"
 
 
-scheduler::mutex* operator* ( scheduler::mutex& ) throw ( scheduler::pointer_not_used )
+scheduler::trylock* 
+scheduler::trylock::operator* ()
 {
-	throw scheduler::pointer_not_used();
+  return 0;
+	//throw scheduler::pointer_not_used();
 }
 
-scheduler::mutex::mutex( std::tr1::shared_ptr< ::pthread_mutex_t > m_ )
+scheduler::trylock::trylock( std::tr1::shared_ptr< ::pthread_mutex_t > m_ )
 	: _m( m_ )
 		, _locked( false )
 {
 }
 
-scheduler::mutex::~mutex()
+scheduler::trylock::~trylock()
 {
 	if ( _locked )
 	{
@@ -21,7 +23,7 @@ scheduler::mutex::~mutex()
 }
 
 bool
-scheduler::mutex::trylock()
+scheduler::trylock::try_lock()
 {
 	if ( pthread_mutex_trylock( _m.get() ) )
 	{
