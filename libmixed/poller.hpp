@@ -30,14 +30,14 @@ class poller
 
 	public:
 
-		static ptr get( std::tr1::shared_ptr< ::pthread_mutex_t >& m_ );
+		static ptr get( ::pthread_mutex_t* m_ );
 
 		/** \brief Triggeruj epoll-a: sprawdź, które sockety coś zapisały / odczytały
 		 * \return true, gdy co najmniej jeden z socketów zmienił stan; false wpw.
 		 */
-		std::map< int, uint32_t > poll();
+		std::tr1::shared_ptr< std::vector< ::epoll_event > > poll();
 
-		bool add( int fd_ );
+		bool add( int fd_ ) throw( std::exception);
 
 		void remove( int fd_ );
 
@@ -45,13 +45,15 @@ class poller
 
 		void init();
 
+    ~poller();
+
   private:
 
     poller();
 
     poller( poller& );
 
-    poller( std::tr1::shared_ptr< ::pthread_mutex_t >& m_ );
+    poller( ::pthread_mutex_t* m_ );
 
 	private:
 
@@ -59,9 +61,11 @@ class poller
 
 	private:
 		int _fd;
-		std::vector< std::tr1::shared_ptr< ::epoll_event > > watched_sockets;
-    std::tr1::shared_ptr< ::pthread_mutex_t > _m;
-    std::map< int, uint32_t > events;
+		::epoll_event* watched_sockets;
+    size_t watched_sockets_size;
+    size_t current_sockets_number;
+    ::pthread_mutex_t* _m;
+    std::map< int, ::epoll_event > _events;
 };
 
 }

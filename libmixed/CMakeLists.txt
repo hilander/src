@@ -9,7 +9,6 @@ set ( LIBMIXED_SOURCES
   userspace_scheduler.cpp
   scheduler_tools.cpp
   message_queue.cpp
-	#socket.cpp
   poller.cpp
 	mutex_trylock.cpp
   )
