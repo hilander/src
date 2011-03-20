@@ -35,7 +35,7 @@ class poller
 		/** \brief Triggeruj epoll-a: sprawdź, które sockety coś zapisały / odczytały
 		 * \return true, gdy co najmniej jeden z socketów zmienił stan; false wpw.
 		 */
-		std::tr1::shared_ptr< std::vector< ::epoll_event > > poll();
+		std::vector< ::epoll_event >* poll();
 
 		bool add( int fd_ ) throw( std::exception);
 

@@ -1,3 +1,4 @@
+//#include <iostream>
 #include "poller.hpp"
 #include "mutex_trylock.hpp"
 #include <pthread.h>
@@ -73,10 +74,12 @@ scheduler::poller::add( int fd_ ) throw( std::exception)
   std::pair<int, ::epoll_event > fd_pair( fd_, ::epoll_event() );
   current_sockets_number++;
 
+	fd_pair.second.events = EPOLLOUT | EPOLLPRI | EPOLLERR | EPOLLHUP;
 	fd_pair.second.data.fd = fd_;
 
 	if ( ::epoll_ctl( _fd, EPOLL_CTL_ADD, fd_, &(fd_pair.second) ) == 0 )
 	{
+    _events.insert( fd_pair );
 		return true;
 	}
 	else
@@ -85,12 +88,12 @@ scheduler::poller::add( int fd_ ) throw( std::exception)
 	}
 }
 
-shared_ptr< vector< ::epoll_event > >
+vector< ::epoll_event >*
 scheduler::poller::poll()
 {
   int events_number = epoll_wait( _fd, watched_sockets, watched_sockets_size, epoll_timeout );
   
-  shared_ptr< vector< ::epoll_event > > v( new vector< ::epoll_event>( events_number ) );
+  vector< ::epoll_event >* v = new vector< ::epoll_event>( events_number );
 
   for ( int i = 0; i < events_number; i++ )
   {
@@ -108,7 +111,11 @@ scheduler::poller::remove( int fd_ )
 
   ::epoll_ctl( _fd, EPOLL_CTL_DEL, fd_, &( removed->second ) );
 
+
+  if ( removed != _events.end() )
+  {
   _events.erase( removed );
+  }
 
   current_sockets_number--;
 
