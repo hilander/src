@@ -66,6 +66,12 @@ scheduler::poller::init()
 bool
 scheduler::poller::add( int fd_ ) throw( std::exception)
 {
+  return add( fd_, EPOLLIN | EPOLLOUT | EPOLLPRI | EPOLLERR | EPOLLHUP );
+}
+
+bool
+scheduler::poller::add( int fd_, uint32_t flags ) throw( std::exception)
+{
   if ( current_sockets_number == watched_sockets_size )
   {
     throw std::exception();
@@ -74,7 +80,7 @@ scheduler::poller::add( int fd_ ) throw( std::exception)
   std::pair<int, ::epoll_event > fd_pair( fd_, ::epoll_event() );
   current_sockets_number++;
 
-	fd_pair.second.events = EPOLLOUT | EPOLLPRI | EPOLLERR | EPOLLHUP;
+	fd_pair.second.events = flags;
 	fd_pair.second.data.fd = fd_;
 
 	if ( ::epoll_ctl( _fd, EPOLL_CTL_ADD, fd_, &(fd_pair.second) ) == 0 )
