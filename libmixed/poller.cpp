@@ -99,7 +99,15 @@ scheduler::poller::poll()
 {
   int events_number = epoll_wait( _fd, watched_sockets, watched_sockets_size, epoll_timeout );
   
-  vector< ::epoll_event >* v = new vector< ::epoll_event>( events_number );
+	vector< ::epoll_event >* v;
+	if ( events_number > 0 )
+	{
+		v = new vector< ::epoll_event>( events_number );
+	}
+	else
+	{
+		v = 0;
+	}
 
   for ( int i = 0; i < events_number; i++ )
   {
