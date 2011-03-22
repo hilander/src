@@ -70,7 +70,7 @@ scheduler::poller::add( int fd_ ) throw( std::exception)
 }
 
 bool
-scheduler::poller::add( int fd_, uint32_t flags ) throw( std::exception)
+scheduler::poller::add( int fd_, uint32_t flags ) throw( std::exception )
 {
   if ( current_sockets_number == watched_sockets_size )
   {
