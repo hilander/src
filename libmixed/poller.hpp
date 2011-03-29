@@ -10,18 +10,6 @@
 namespace scheduler
 {
 
-struct socket_state
-{
-	public:
-		enum {
-			IDLE,
-			GOT_DATA,
-			WRITTEN_DATA,
-			EXCEPTION,
-			UNDEFINED
-		};
-};
-
 class poller
 {
 

@@ -11,7 +11,8 @@ set ( LIBMIXED_SOURCES
   message_queue.cpp
   poller.cpp
 	mutex_trylock.cpp
-  socket_factory.cpp
+  server.cpp
+  client.cpp
   )
 
 add_library ( libmixed SHARED ${LIBMIXED_SOURCES} )
