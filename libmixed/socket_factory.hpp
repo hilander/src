@@ -1,7 +1,14 @@
 #ifndef SOCKET_FACTORY_HPP
 #define SOCKET_FACTORY_HPP
 
+#include <tr1/memory>
+
 #include "poller.hpp"
+
+namespace posix_socket
+{
+#include <sys/socket.h>
+}
 
 namespace scheduler
 {
@@ -24,6 +31,10 @@ class abstract
 		 */
     virtual int write() = 0;
 
+		/** Zainicjalizuj obiekt
+		 */
+		virtual void init() = 0;
+
 	protected:
 
 		/** \brief Zarejestruj gniazdo.
@@ -33,10 +44,6 @@ class abstract
 		/** \brief Wyrejestruj gniazdo.
 		 */
 		virtual void deregister( int fd_ ) = 0;
-
-		/** Zainicjalizuj obiekt
-		 */
-		virtual void init() = 0;
 };
 
 class server : public abstract
@@ -64,6 +71,10 @@ class server : public abstract
 		 */
     virtual int write();
 
+		/** Zainicjalizuj obiekt
+		 */
+		virtual void init();
+
 	protected:
 
 		/** \brief Zarejestruj gniazdo.
@@ -73,10 +84,6 @@ class server : public abstract
 		/** \brief Wyrejestruj gniazdo.
 		 */
 		virtual void deregister( int fd_ );
-
-		/** Zainicjalizuj obiekt
-		 */
-		virtual void init();
 };
 
 class client : public abstract
@@ -92,9 +99,17 @@ class client : public abstract
 
   public:
 
+		client( int fd_
+          , std::tr1::shared_ptr< posix_socket::sockaddr > sa_
+          , ::socklen_t sa_len_
+          , scheduler::poller::ptr p_ );
+
 		/** \brief Pobierz uchwyt do obiektu.
 		 */
-    static ptr get_ptr();
+    static ptr get_ptr( int fd_
+                      , std::tr1::shared_ptr< posix_socket::sockaddr > sa_
+                      , ::socklen_t sa_len_
+                      , scheduler::poller::ptr p_ );
 
 		/** \brief Czytaj (blokująco dla zapisującego włókna).
 		 */
@@ -104,31 +119,33 @@ class client : public abstract
 		 */
     virtual int write();
 
+		/** Zainicjalizuj obiekt
+		 */
+		virtual void init();
+
 	protected:
 
 		/** \brief Zarejestruj gniazdo.
 		 */
-		virtual bool do_register( int fd_ = _fd);
+		virtual bool do_register( int fd_ );
 
 		/** \brief Wyrejestruj gniazdo.
 		 */
-		virtual void deregister( int fd_ = _fd );
-
-		/** Zainicjalizuj obiekt
-		 */
-		virtual void init();
+		virtual void deregister( int fd_ );
 
 	private:
 
 		client() {} // nie używać
 
-		client( scheduler::poller::ptr p_ );
-
 	private:
 
-		scheduler::poller::ptr _p; /// \brief Epoller
-
 		int _fd;
+
+    std::tr1::shared_ptr< posix_socket::sockaddr > _sa;
+
+    ::socklen_t _sa_len;
+
+		scheduler::poller::ptr _p; /// \brief Epoller
 };
 
 }
