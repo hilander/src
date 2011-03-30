@@ -1,9 +1,11 @@
 #ifndef LIBCORO_FIBER_HPP
 #define LIBCORO_FIBER_HPP
 
-#include <coroutine.hpp>
-#include <state_controller.hpp>
-#include <scheduler_tools.hpp>
+#include <vector>
+
+#include "coroutine.hpp"
+#include "state_controller.hpp"
+#include "scheduler_tools.hpp"
 
 namespace scheduler
 {
@@ -47,6 +49,21 @@ class fiber : public libcoro::coroutine
 
 		void send_data( scheduler::spawned_data*& d );
     
+		// sockets (general) 
+		bool read( std::vector< char >& buf, ssize_t& read_bytes );
+
+		bool write( std::vector< char >& buf, ssize_t& read_bytes );
+		
+		// server socket
+		void init_server( int fd_ );
+
+		int accept( int fd_ );
+
+		// client socket
+		void init_client( int fd_ );
+
+		int connect( int fd_ );
+
   public:
     libcoro::state_controller state;
 

@@ -85,6 +85,19 @@ class ueber_scheduler : public libcoro::coroutine, public abstract
 
 		virtual bool receive( spawned_data::ptr data );
 
+		//sockets
+		virtual bool read( std::vector< char >& buf_ , ssize_t& read_bytes_ );
+
+		virtual bool write( std::vector< char >& buf_ , ssize_t& read_bytes_ );
+
+		virtual void init_server( int fd_ );
+
+		virtual int accept( int fd_ );
+
+		virtual void init_client( int fd_ );
+
+		virtual int connect( int fd_ );
+
 	private:
         void create_local_schedulers( std::list< userspace_scheduler* >* list_ );
 

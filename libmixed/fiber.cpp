@@ -1,6 +1,8 @@
-#include <fiber.hpp>
-#include <scheduler.hpp>
-#include <scheduler_tools.hpp>
+#include <vector>
+
+#include "fiber.hpp"
+#include "scheduler.hpp"
+#include "scheduler_tools.hpp"
 
 fiber::fiber::fiber()
 : _supervisor( 0 )
@@ -73,5 +75,45 @@ fiber::fiber::receive_data( scheduler::spawned_data*& d )
 void
 fiber::fiber::send_data( scheduler::spawned_data*& d )
 {
+	// probably not needed
+}
 
+// wrappery dla socketów
+bool
+fiber::fiber::read( std::vector< char >& buf_ , ssize_t& read_bytes_  )
+{
+	return _supervisor->read( buf_ , read_bytes_  );
+}
+
+bool
+fiber::fiber::write( std::vector< char >& buf_ , ssize_t& read_bytes_  )
+{
+	return _supervisor->read( buf_ , read_bytes_  );
+}
+
+// wrappery dla serwera
+void
+fiber::fiber::init_server( int fd_ )
+{
+	_supervisor->init_server( fd_ );
+}
+
+int
+fiber::fiber::accept( int fd_ )
+{
+	return _supervisor->accept( fd_ );
+}
+
+// wrappery dla klienta
+// note: po accept() klientem jest również otrzymany fd
+void
+fiber::fiber::init_client( int fd_ )
+{
+	_supervisor->init_client( fd_ );
+}
+
+int
+fiber::fiber::connect( int fd_ )
+{
+	return _supervisor->connect( fd_ );
 }
