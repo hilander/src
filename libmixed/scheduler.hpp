@@ -64,9 +64,9 @@ class ueber_scheduler : public libcoro::coroutine, public abstract
 
 		virtual void run();
 
-		bool get_from_pipe(raw_pipe* rp, spawned_data* sp);
+		bool get_from_pipe(raw_pipe* rp, spawned_data& sp);
 
-		bool read_and_interpret ( raw_pipe* rp, spawned_data* pc );
+		bool read_and_interpret ( raw_pipe* rp, spawned_data& pc );
 
 		virtual void start();
 
@@ -81,22 +81,9 @@ class ueber_scheduler : public libcoro::coroutine, public abstract
   public: // Interfejs abstract:
 		virtual void spawn( fiber::fiber::ptr fiber );
 
-    virtual bool send( spawned_data::ptr data );
+    virtual bool send( spawned_data& data );
 
-		virtual bool receive( spawned_data::ptr data );
-
-		//sockets
-		virtual bool read( std::vector< char >& buf_ , ssize_t& read_bytes_ );
-
-		virtual bool write( std::vector< char >& buf_ , ssize_t& read_bytes_ );
-
-		virtual void init_server( int fd_ );
-
-		virtual int accept( int fd_ );
-
-		virtual void init_client( int fd_ );
-
-		virtual int connect( int fd_ );
+		virtual bool receive( spawned_data& data );
 
 	private:
         void create_local_schedulers( std::list< userspace_scheduler* >* list_ );

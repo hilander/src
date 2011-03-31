@@ -27,13 +27,13 @@ fiber::fiber::run()
 }
 
 void 
-fiber::fiber::set_supervisor( scheduler::abstract* supervisor_ )
+fiber::fiber::set_supervisor( scheduler::userspace_scheduler* supervisor_ )
 {
   _supervisor = supervisor_;
 }
 
 bool
-fiber::fiber::send( scheduler::spawned_data*& message )
+fiber::fiber::send( scheduler::spawned_data& message )
 {
   bool rv;
 
@@ -50,10 +50,10 @@ fiber::fiber::send( scheduler::spawned_data*& message )
 }
 
 bool
-fiber::fiber::receive( scheduler::spawned_data*& d )
+fiber::fiber::receive( scheduler::spawned_data& d )
 {
   bool rv;
-  std::list< scheduler::spawned_data* >::iterator i = incoming_messages.begin();
+  std::list< scheduler::spawned_data >::iterator i = incoming_messages.begin();
   if ( i == incoming_messages.end() )
   {
     rv = false;
@@ -67,41 +67,41 @@ fiber::fiber::receive( scheduler::spawned_data*& d )
 }
 
 void
-fiber::fiber::receive_data( scheduler::spawned_data*& d )
+fiber::fiber::receive_data( scheduler::spawned_data& d )
 {
   incoming_messages.push_back( d );
 }
 
 void
-fiber::fiber::send_data( scheduler::spawned_data*& d )
+fiber::fiber::send_data( scheduler::spawned_data& d )
 {
 	// probably not needed
 }
 
 // wrappery dla socketów
 bool
-fiber::fiber::read( std::vector< char >& buf_ , ssize_t& read_bytes_  )
+fiber::fiber::read( std::vector< char >& buf_ , ssize_t& read_bytes_, int fd_  )
 {
-	return _supervisor->read( buf_ , read_bytes_  );
+	return _supervisor->read( buf_ , read_bytes_, this, fd_  );
 }
 
 bool
 fiber::fiber::write( std::vector< char >& buf_ , ssize_t& read_bytes_  )
 {
-	return _supervisor->read( buf_ , read_bytes_  );
+	return _supervisor->write( buf_ , read_bytes_, this  );
 }
 
 // wrappery dla serwera
 void
 fiber::fiber::init_server( int fd_ )
 {
-	_supervisor->init_server( fd_ );
+	_supervisor->init_server( fd_, this );
 }
 
 int
 fiber::fiber::accept( int fd_ )
 {
-	return _supervisor->accept( fd_ );
+	return _supervisor->accept( fd_, this );
 }
 
 // wrappery dla klienta
@@ -109,11 +109,11 @@ fiber::fiber::accept( int fd_ )
 void
 fiber::fiber::init_client( int fd_ )
 {
-	_supervisor->init_client( fd_ );
+	_supervisor->init_client( fd_, this );
 }
 
 int
 fiber::fiber::connect( int fd_ )
 {
-	return _supervisor->connect( fd_ );
+	return _supervisor->connect( fd_, this );
 }

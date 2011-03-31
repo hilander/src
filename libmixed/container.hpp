@@ -24,6 +24,7 @@ class container
 		void dispose( Item* thread );
 		bool empty();
 		void insert( Item* thread );
+		void erase( Item* elem );
     bool exists( Item* elem );
 };
 
@@ -160,6 +161,24 @@ class container < Item, std::map< Item*, Item* > >
 			(*tmp).second = 0;
 			threads.erase( tmp );
 			current = threads.begin();
+		}
+
+		void erase( Item* elem )
+		{
+			m_it found = threads.find( elem );
+
+			if ( found != threads.end() )
+			{
+				if ( found == current ) // should be...
+				{
+					++current;
+					if ( current == threads.end() )
+					{
+						current = threads.begin();
+					}
+				}
+				threads.erase( found );
+			}
 		}
 
 		void insert( Item* thread )

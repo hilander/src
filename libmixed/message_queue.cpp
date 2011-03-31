@@ -21,7 +21,7 @@ scheduler::message_queue::~message_queue()
 }
 
 bool
-scheduler::message_queue::write( spawned_data* m )
+scheduler::message_queue::write( spawned_data& m )
 {
   bool rv = true;
 
@@ -30,7 +30,7 @@ scheduler::message_queue::write( spawned_data* m )
 		//std::cout << "read: mutex_lock..."; std::cout.flush();
 		try
 		{
-			spawned_data::ptr tmp = new spawned_data();
+			spawned_data tmp;
 			spawned_data::rewrite( tmp, m );
 			_messages.push_back( tmp );
 		}
@@ -50,7 +50,7 @@ scheduler::message_queue::write( spawned_data* m )
 }
 
 bool
-scheduler::message_queue::read( spawned_data* m )
+scheduler::message_queue::read( spawned_data& m )
 {
   bool rv = true;
 
@@ -60,7 +60,7 @@ scheduler::message_queue::read( spawned_data* m )
 		if ( ! _messages.empty() )
 		{
       scheduler::spawned_data::rewrite( m, _messages.front() );
-			if ( m->d >= BLOCK && m->d <= NOTHING )
+			if ( m.d >= BLOCK && m.d <= NOTHING )
 			{
 				_messages.pop_front();
 			}

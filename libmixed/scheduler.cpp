@@ -155,7 +155,7 @@ scheduler::ueber_scheduler::run()
     {
       spawned_data pc;
       pc.d = NOTHING;
-      while ( read_and_interpret( *pipe_it, &pc ) )
+      while ( read_and_interpret( *pipe_it, pc ) )
       {
         switch ( pc.d )
         {
@@ -164,7 +164,7 @@ scheduler::ueber_scheduler::run()
             break;
             
           case FIBER_SPECIFIC:
-						send( &pc );
+						send( pc );
             break;
             
           case BLOCK:
@@ -190,8 +190,8 @@ scheduler::ueber_scheduler::run()
 		if ( ( total_workload == 0 ) && ( blocked_num == 0 ) )
 		{
 			// poinformuj wszystkie worker schedulery o końcu pracy
-			spawned_data::ptr end_info = new spawned_data();
-			end_info->d = END;
+			spawned_data end_info;
+			end_info.d = END;
 			send( end_info );
 		}
   } while ( (total_workload != 0) || (blocked_num != 0) ) ;
@@ -215,13 +215,13 @@ scheduler::ueber_scheduler::run()
 }
 
 bool 
-scheduler::ueber_scheduler::get_from_pipe(scheduler::raw_pipe* rp, scheduler::spawned_data* sp)
+scheduler::ueber_scheduler::get_from_pipe(scheduler::raw_pipe* rp, scheduler::spawned_data& sp)
 {
     return rp->read_out( sp );
 }
 
 bool 
-scheduler::ueber_scheduler::read_and_interpret(scheduler::raw_pipe* rp, scheduler::spawned_data* pc)
+scheduler::ueber_scheduler::read_and_interpret(scheduler::raw_pipe* rp, scheduler::spawned_data& pc)
 {
   return get_from_pipe( rp, pc );
 }
@@ -300,14 +300,14 @@ scheduler::ueber_scheduler::spawn(fiber::fiber::ptr fiber)
 /** \brief userspace_scheduler nie znalazł u siebie odpowiedniego wątku - trzeba zrobić broadcast.
  */
 bool
-scheduler::ueber_scheduler::send( spawned_data::ptr data )
+scheduler::ueber_scheduler::send( spawned_data& data )
 {
 	std::list< raw_pipe* >::iterator i;
 	for ( i = pipes.begin();
 			  i != pipes.end();
 				i++ )
 	{
-		spawned_data *td = new spawned_data();
+		spawned_data td;
 		spawned_data::rewrite( td, data );
 		while ( ! (*i)->write_in( td ) )
 		{
@@ -317,7 +317,8 @@ scheduler::ueber_scheduler::send( spawned_data::ptr data )
 }
 
 bool
-scheduler::ueber_scheduler::receive( spawned_data::ptr data )
+scheduler::ueber_scheduler::receive( spawned_data& data )
 {
 	return true;
 }
+

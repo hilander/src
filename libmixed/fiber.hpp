@@ -38,19 +38,19 @@ class fiber : public libcoro::coroutine
     
     virtual void run();
 
-    void set_supervisor( scheduler::abstract* supervisor_ );
+    void set_supervisor( scheduler::userspace_scheduler* supervisor_ );
     
   public: 
-    bool send( scheduler::spawned_data*& message );
+    bool send( scheduler::spawned_data& message );
 
-		bool receive( scheduler::spawned_data*& message );
+		bool receive( scheduler::spawned_data& message );
 
-		void receive_data( scheduler::spawned_data*& d );
+		void receive_data( scheduler::spawned_data& d );
 
-		void send_data( scheduler::spawned_data*& d );
+		void send_data( scheduler::spawned_data& d );
     
 		// sockets (general) 
-		bool read( std::vector< char >& buf, ssize_t& read_bytes );
+		bool read( std::vector< char >& buf, ssize_t& read_bytes, int fd_ );
 
 		bool write( std::vector< char >& buf, ssize_t& read_bytes );
 		
@@ -68,9 +68,9 @@ class fiber : public libcoro::coroutine
     libcoro::state_controller state;
 
   protected:
-    scheduler::abstract* _supervisor;
+    scheduler::userspace_scheduler* _supervisor;
 
-		std::list< scheduler::spawned_data* > incoming_messages;
+		std::list< scheduler::spawned_data > incoming_messages;
 };
 
 }

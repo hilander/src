@@ -112,9 +112,9 @@ scheduler::userspace_scheduler::start()
 void 
 scheduler::userspace_scheduler::spawn(fiber::fiber::ptr fiber)
 {
-  spawned_data* sp = new spawned_data();
-  sp->d = SPAWN;
-  sp->p = fiber;
+  spawned_data sp;
+  sp.d = SPAWN;
+  sp.p = fiber;
   bool written;
   do
   {
@@ -139,9 +139,9 @@ scheduler::userspace_scheduler::spawn(void* f, int )
   // Obciążenie: +1;
   workload++;
   //std::cout << workload << std::endl;
-  spawned_data* sp = new spawned_data();
-  sp->d = SPAWN_CONFIRMED;
-  sp->p = f;
+  spawned_data sp;
+  sp.d = SPAWN_CONFIRMED;
+  sp.p = f;
   bool written;
   do
   {
@@ -172,70 +172,59 @@ scheduler::userspace_scheduler::get_workload()
 * TODO
 */
 void 
-scheduler::userspace_scheduler::block(fiber::fiber::ptr f)
+scheduler::userspace_scheduler::block( scheduler::data_kind k, fiber::fiber::ptr caller )
 {
-  send_message( BLOCK, (void*)(&f) );
-  // wątek nie powinien być wznawiany
-  
-}
+	spawned_data message;
+	message.d = k;
+	message.sender = caller;
 
-/** Niebezpieczne złogi!
- */
-void 
-scheduler::userspace_scheduler::send_message(scheduler::data_kind k, void* d)
-{
-  char buf[ sizeof(data_kind) + sizeof(void*) ];
-  size_t length = 0;
-  switch ( k )
-  {
-    case BLOCK:
-      memcpy( (void*)buf, (void*)(&k), (length = sizeof(data_kind)) );
-      length += sizeof(void*);
-      memcpy( (void*)(buf+length), (void*)(&d), length );
-      break;
-    default:
-      break;
-  }
-  bool written;
-  do
-  {
-    written = message_device->write_out( reinterpret_cast< spawned_data* >( buf ) );
-  }
-  while ( !written )
-		;
+	caller->state.block();
+	ready.erase( caller );
+  send( message );
 }
 
 void 
 scheduler::userspace_scheduler::read_messages()
 {
-  size_t record_size = sizeof( sizeof(data_kind) + sizeof(void*) );
-  spawned_data* sp = new spawned_data();
-  sp->d = NOTHING;
-  sp->p = 0;
+  spawned_data sp;
+  sp.d = NOTHING;
+  sp.p = 0;
   
   if ( message_device->read_in( sp ) )
   {
 		spawned_data response;
-    switch (sp->d)
+    switch (sp.d)
     {
       case END:
         finish();
         break;
 
       case SPAWN:
-        spawn(sp->p, 0);
+        spawn(sp.p, 0);
 				response.d = SPAWN_CONFIRMED;
 				response.p = 0;
         break;
 
 			case FIBER_SPECIFIC:
-        if ( ready.exists( sp->receiver ) ) 
+        if ( ready.exists( sp.receiver ) ) 
         {
           // Receiver fiber must read its data:
-          sp->receiver->receive_data( sp );
+          sp.receiver->receive_data( sp );
         }
 				break;
 
+			case SOCKET_READ_FAIL:
+			case SOCKET_READ_READY:
+			{
+				std::map< int, scheduler::data_kind* >::iterator socket_resp;
+				int* descriptor_to_find = (int*) (sp.p);
+				socket_resp = socket_descriptors.find( *descriptor_to_find );
+				*( socket_resp->second ) = sp.d;
+				fiber::fiber::ptr fp = sp.sender;
+				fp->state.unblock();
+				ready.insert( fp );
+				break;
+			}
       default:
         break;
     }
@@ -243,14 +232,14 @@ scheduler::userspace_scheduler::read_messages()
 }
 
 bool 
-scheduler::userspace_scheduler::send( spawned_data::ptr data )
+scheduler::userspace_scheduler::send( spawned_data& data )
 {
-  if ( data->receiver != 0 ) 
+  if ( data.receiver != 0 ) 
   {
-		if ( ready.exists( data->receiver ) ) 
+		if ( ready.exists( data.receiver ) ) 
 		{
 			// Receiver fiber must read its data:
-			data->receiver->receive_data( data );
+			data.receiver->receive_data( data );
 			return true;
 		}
 		else
@@ -263,7 +252,7 @@ scheduler::userspace_scheduler::send( spawned_data::ptr data )
 
 // not needed?
 bool
-scheduler::userspace_scheduler::receive( spawned_data::ptr data )
+scheduler::userspace_scheduler::receive( spawned_data& data )
 {
   return false;
 }
@@ -273,6 +262,67 @@ scheduler::userspace_scheduler::ended()
 {
 	return _ended;
 }
+
+bool
+scheduler::userspace_scheduler::read( std::vector< char >& buf_ , ssize_t& read_bytes_, fiber::fiber::ptr caller, int fd_ )
+{
+	// called from fiber side, must be suspended (blocking for fiber)
+	block( SOCKET_READ_REQ, caller);
+	caller->yield();
+
+	// magically, we are back...
+	std::map< int, scheduler::data_kind* >::iterator socket_resp;
+	socket_resp = socket_descriptors.find( fd_ );
+	switch ( *( socket_resp->second ) )
+	{
+		case SOCKET_READ_FAIL:
+			return false;
+
+		case SOCKET_READ_REQ:
+			if ( ( read_bytes_ = ::read( fd_, &buf_[0], buf_.size() ) ) > 0 )
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+
+		default:
+			return false;
+	}
+}
+                                                                
+bool
+scheduler::userspace_scheduler::write( std::vector< char >& buf_ , ssize_t& read_bytes_, fiber::fiber::ptr caller )
+{
+	block( SOCKET_WRITE_REQ, caller );
+}
+
+void
+scheduler::userspace_scheduler::init_server( int fd_, fiber::fiber::ptr caller )
+{
+	block( REGISTER_SERVER_REQ, caller );
+}
+
+int
+scheduler::userspace_scheduler::accept( int fd_, fiber::fiber::ptr caller )
+{
+	block( SERVER_ACCEPT_REQ, caller );
+}
+
+void
+scheduler::userspace_scheduler::init_client( int fd_, fiber::fiber::ptr caller )
+{
+	block( REGISTER_CLIENT_REQ, caller );
+}
+
+int
+scheduler::userspace_scheduler::connect( int fd_, fiber::fiber::ptr caller )
+{
+	block( CLIENT_CONNECT_REQ, caller );
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Only for debug purposes                                                     /
 ////////////////////////////////////////////////////////////////////////////////

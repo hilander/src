@@ -14,7 +14,7 @@ const int queue_count = 2;
 class message_queue
 {
     public:
-        typedef std::list< spawned_data* > messages_t;
+        typedef std::list< spawned_data > messages_t;
 
     private:
         messages_t _messages;
@@ -26,8 +26,8 @@ class message_queue
         ~message_queue();
         void clean();
 
-        bool read( spawned_data* m );
-        bool write( spawned_data* m );
+        bool read( spawned_data& m );
+        bool write( spawned_data& m );
 };
 
 }
