@@ -82,20 +82,20 @@ fiber::fiber::send_data( scheduler::spawned_data& d )
 bool
 fiber::fiber::read( std::vector< char >& buf_ , ssize_t& read_bytes_, int fd_  )
 {
-	return _supervisor->read( buf_ , read_bytes_, this, fd_  );
+	return _supervisor->read( buf_ , read_bytes_, this, fd_ );
 }
 
 bool
-fiber::fiber::write( std::vector< char >& buf_ , ssize_t& read_bytes_  )
+fiber::fiber::write( std::vector< char >& buf_ , ssize_t& read_bytes_, int fd_  )
 {
-	return _supervisor->write( buf_ , read_bytes_, this  );
+	return _supervisor->write( buf_ , read_bytes_, this, fd_  );
 }
 
 // wrappery dla serwera
-void
+bool
 fiber::fiber::init_server( int fd_ )
 {
-	_supervisor->init_server( fd_, this );
+	return _supervisor->init_server( fd_, this );
 }
 
 int
@@ -106,13 +106,13 @@ fiber::fiber::accept( int fd_ )
 
 // wrappery dla klienta
 // note: po accept() klientem jest również otrzymany fd
-void
+bool
 fiber::fiber::init_client( int fd_ )
 {
-	_supervisor->init_client( fd_, this );
+	return _supervisor->init_client( fd_, this );
 }
 
-int
+bool
 fiber::fiber::connect( int fd_ )
 {
 	return _supervisor->connect( fd_, this );

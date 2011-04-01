@@ -52,17 +52,17 @@ class fiber : public libcoro::coroutine
 		// sockets (general) 
 		bool read( std::vector< char >& buf, ssize_t& read_bytes, int fd_ );
 
-		bool write( std::vector< char >& buf, ssize_t& read_bytes );
+		bool write( std::vector< char >& buf, ssize_t& read_bytes, int fd_ );
 		
 		// server socket
-		void init_server( int fd_ );
+		bool init_server( int fd_ );
 
 		int accept( int fd_ );
 
 		// client socket
-		void init_client( int fd_ );
+		bool init_client( int fd_ );
 
-		int connect( int fd_ );
+		bool connect( int fd_ );
 
   public:
     libcoro::state_controller state;
