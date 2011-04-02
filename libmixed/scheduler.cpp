@@ -1,4 +1,6 @@
 #include <iostream>
+#include <utility>
+#include "poller.hpp"
 #include "scheduler.hpp"
 #include "userspace_scheduler.hpp"
 
@@ -60,6 +62,8 @@ scheduler::ueber_scheduler::init( std::list< userspace_scheduler* >* local_sched
   
   // pthreads end
   
+	epoller = poller::get( 0 );
+
   if ( local_schedulers == 0 )
   {
       create_local_schedulers();
@@ -167,8 +171,22 @@ scheduler::ueber_scheduler::run()
 						send( pc );
             break;
             
-          case BLOCK:
+          case BLOCK: // won't be used, but it will be always as first
             break;
+
+					case REGISTER_SERVER_REQ:
+					case DEREGISTER_SERVER_REQ:
+					case REGISTER_CLIENT_REQ:
+					case DEREGISTER_CLIENT_REQ:
+					case SERVER_ACCEPT_REQ:
+					case CLIENT_CONNECT_REQ:
+					case SOCKET_READ_REQ:
+					case SOCKET_WRITE_REQ:
+					{
+						int* descr = (int*) (pc.p);
+						blocked.insert( std::make_pair( *descr, pc ) );
+						break;
+					}
             
           default:
             break;
@@ -177,6 +195,8 @@ scheduler::ueber_scheduler::run()
       }
     }
     
+		do_epolls();
+
     total_workload = 0;
     for ( it = schedulers.begin();
     it != schedulers.end();
@@ -234,12 +254,6 @@ scheduler::ueber_scheduler::start()
   
   ::pthread_attr_init ( &stub_attr );
   ::pthread_create( &stub_thread, &stub_attr, &ueber_scheduler::stub_go, ( void* )this );
-}
-
-bool 
-scheduler::ueber_scheduler::empty()
-{
-  return ready.empty();
 }
 
 void 
@@ -322,3 +336,43 @@ scheduler::ueber_scheduler::receive( spawned_data& data )
 	return true;
 }
 
+void
+scheduler::ueber_scheduler::do_epolls()
+{
+	typedef std::vector< ::epoll_event > vector;
+	std::auto_ptr< vector > events( epoller->poll() );
+
+	if ( events.get() != 0 )
+	{
+		for ( vector::iterator it = events->begin();
+				it != events->end();
+				it++ )
+		{
+			::epoll_event ev = *it;
+			std::map< int, spawned_data >::iterator waiting = blocked.find( ev.data.fd );
+			// sprawdź, na co czekało włókno, wyślij mu odpowiedź
+			if ( waiting != blocked.end() )
+			{
+				spawned_data response;
+				set_epoll_response( ev, response, waiting->second );
+				send( response );
+			}
+		}
+	}
+}
+
+void
+scheduler::ueber_scheduler::set_epoll_response( ::epoll_event& e, spawned_data& resp, spawned_data& orig_mess )
+{
+	switch ( orig_mess.d )
+	{
+		case SOCKET_READ_REQ:
+			break;
+
+		case SOCKET_WRITE_REQ:
+			break;
+
+		default:
+			break;
+	}
+}

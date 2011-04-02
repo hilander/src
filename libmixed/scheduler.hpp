@@ -15,6 +15,7 @@
 #include <scheduler_tools.hpp>
 #include <userspace_scheduler.hpp>
 #include <scheduler_interface.hpp>
+#include "poller.hpp"
 
 /** \brief Przestrzeń nazw planisty wątków.
  *
@@ -70,8 +71,6 @@ class ueber_scheduler : public libcoro::coroutine, public abstract
 
 		virtual void start();
 
-		virtual bool empty();
-
     void join_u_sch();
 
     libmanager::manager::ptr get_manager();
@@ -86,9 +85,13 @@ class ueber_scheduler : public libcoro::coroutine, public abstract
 		virtual bool receive( spawned_data& data );
 
 	private:
-        void create_local_schedulers( std::list< userspace_scheduler* >* list_ );
+		void create_local_schedulers( std::list< userspace_scheduler* >* list_ );
 
-        void create_local_schedulers();
+		void create_local_schedulers();
+
+		void do_epolls();
+
+		void set_epoll_response( ::epoll_event& e, spawned_data& resp, spawned_data& orig_mess );
 
 		static void* stub_go( void* obj );
 
@@ -98,8 +101,7 @@ class ueber_scheduler : public libcoro::coroutine, public abstract
 		libmanager::manager manager;
 
 		::pthread_attr_t stack_attr;
-		thread_container ready;
-		thread_container blocked;
+		std::map< int, scheduler::spawned_data > blocked;
 		::pthread_t main_thread;
 		::pthread_mutex_t container_is_ready;
 
@@ -110,6 +112,7 @@ class ueber_scheduler : public libcoro::coroutine, public abstract
 		userspace_scheduler::list schedulers;
 		libmanager::manager man;
 		std::list<raw_pipe*> pipes;
+		poller::ptr epoller;
 };
 
 }
