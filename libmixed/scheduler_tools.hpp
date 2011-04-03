@@ -16,11 +16,16 @@ namespace fiber
 namespace scheduler
 {
 
+namespace posix
+{
+#include <sys/socket.h>
+}
 typedef container< fiber::fiber, std::map< fiber::fiber*, fiber::fiber* > > thread_container;
 
 enum data_kind
 {
 	BLOCK,
+	UNBLOCKED,
 	END,
 	SPAWN,
 	SPAWN_CONFIRMED,
@@ -59,6 +64,14 @@ enum data_kind
 	SOCKET_WRITE_FAIL,
 
 	NOTHING
+};
+
+struct accept_connect_data
+{
+	typedef accept_connect_data* ptr;
+
+	int fd;
+	posix::sockaddr saddr;
 };
 
 struct spawned_data

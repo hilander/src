@@ -20,6 +20,13 @@ namespace tools
         return ( u1->get_workload() >= u2->get_workload() );
       }
   };
+
+	namespace posix
+	{
+		#include <fcntl.h>
+		#include <unistd.h>
+		#include <sys/socket.h>
+	}
   
 }
   
@@ -164,6 +171,7 @@ scheduler::ueber_scheduler::run()
         switch ( pc.d )
         {
           case SPAWN_CONFIRMED:
+          case UNBLOCKED:
             blocked_num--;
             break;
             
@@ -174,19 +182,24 @@ scheduler::ueber_scheduler::run()
           case BLOCK: // won't be used, but it will be always as first
             break;
 
+					case SOCKET_READ_REQ:
+					case SOCKET_WRITE_REQ:
+					{
+						int* descr = (int*) (pc.p);
+						move_to_blocked( *descr, pc );
+						break;
+					}
+
 					case REGISTER_SERVER_REQ:
 					case DEREGISTER_SERVER_REQ:
 					case REGISTER_CLIENT_REQ:
 					case DEREGISTER_CLIENT_REQ:
 					case SERVER_ACCEPT_REQ:
-					case CLIENT_CONNECT_REQ:
-					case SOCKET_READ_REQ:
-					case SOCKET_WRITE_REQ:
-					{
-						int* descr = (int*) (pc.p);
-						blocked.insert( std::make_pair( *descr, pc ) );
 						break;
-					}
+
+					case CLIENT_CONNECT_REQ:
+						do_connect( pc );
+						break;
             
           default:
             break;
@@ -195,6 +208,7 @@ scheduler::ueber_scheduler::run()
       }
     }
     
+		// nie tylko epoll, również accept / connect
 		do_epolls();
 
     total_workload = 0;
@@ -268,8 +282,19 @@ libmanager::manager::ptr scheduler::ueber_scheduler::get_manager()
   return &manager;
 }
 
-void scheduler::ueber_scheduler::move_to_blocked(fiber::fiber::ptr )
+void scheduler::ueber_scheduler::move_to_blocked( int fd_, scheduler::spawned_data& f_ )
 {
+	blocked.insert( std::pair< int, scheduler::spawned_data >( fd_, f_ ) );
+	blocked_num++;
+}
+
+void scheduler::ueber_scheduler::delete_from_blocked( int fd_ )
+{
+	std::map< int, scheduler::spawned_data >::iterator rem_candidate = blocked.find( fd_ );
+	if ( rem_candidate != blocked.end() )
+	{
+		blocked.erase( rem_candidate );
+	}
 }
 
 scheduler::ueber_scheduler::~ueber_scheduler()
@@ -336,6 +361,10 @@ scheduler::ueber_scheduler::receive( spawned_data& data )
 	return true;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Sockets                                                                     /
+////////////////////////////////////////////////////////////////////////////////
+
 void
 scheduler::ueber_scheduler::do_epolls()
 {
@@ -349,30 +378,66 @@ scheduler::ueber_scheduler::do_epolls()
 				it++ )
 		{
 			::epoll_event ev = *it;
-			std::map< int, spawned_data >::iterator waiting = blocked.find( ev.data.fd );
+			int fd = ev.data.fd;
+			std::map< int, spawned_data >::iterator waiting = blocked.find( fd );
 			// sprawdź, na co czekało włókno, wyślij mu odpowiedź
 			if ( waiting != blocked.end() )
 			{
 				spawned_data response;
 				set_epoll_response( ev, response, waiting->second );
 				send( response );
+				delete_from_blocked( fd );
 			}
 		}
 	}
 }
 
 void
+scheduler::ueber_scheduler::do_connect( spawned_data& orig_mess )
+{
+	accept_connect_data::ptr data = (accept_connect_data::ptr) orig_mess.p;
+	int orig_flags = ::fcntl( data->fd, F_GETFL );
+	::fcntl( data->fd, F_SETFL, orig_flags | O_NONBLOCK );
+
+	if ( posix::connect( data->fd, &data->saddr, sizeof( data->saddr ) ) == 0 )
+	{
+		// ok, włókno może używać
+
+	}
+}
+
+void
 scheduler::ueber_scheduler::set_epoll_response( ::epoll_event& e, spawned_data& resp, spawned_data& orig_mess )
 {
+	resp.receiver = orig_mess.sender;
+	resp.p = orig_mess.p;
+
 	switch ( orig_mess.d )
 	{
 		case SOCKET_READ_REQ:
+			if ( e.events & EPOLLIN )
+			{
+				resp.d = SOCKET_READ_READY;
+			}
+			else
+			{
+				resp.d = SOCKET_READ_FAIL;
+			}
 			break;
 
 		case SOCKET_WRITE_REQ:
+			if ( e.events & EPOLLOUT )
+			{
+				resp.d = SOCKET_WRITE_READY;
+			}
+			else
+			{
+				resp.d = SOCKET_WRITE_FAIL;
+			}
 			break;
 
 		default:
 			break;
 	}
 }
+

@@ -75,7 +75,9 @@ class ueber_scheduler : public libcoro::coroutine, public abstract
 
     libmanager::manager::ptr get_manager();
 
-    void move_to_blocked( fiber::fiber::ptr /*f*/ );
+    void move_to_blocked( int fd_, scheduler::spawned_data& f_ );
+
+    void delete_from_blocked( int fd_ );
 
   public: // Interfejs abstract:
 		virtual void spawn( fiber::fiber::ptr fiber );
@@ -90,6 +92,8 @@ class ueber_scheduler : public libcoro::coroutine, public abstract
 		void create_local_schedulers();
 
 		void do_epolls();
+
+		void do_connect( spawned_data& orig_mess );
 
 		void set_epoll_response( ::epoll_event& e, spawned_data& resp, spawned_data& orig_mess );
 
