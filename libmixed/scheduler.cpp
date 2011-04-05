@@ -192,12 +192,12 @@ scheduler::ueber_scheduler::run()
 
 					case REGISTER_SERVER_REQ:
 					case REGISTER_CLIENT_REQ:
-                        do_register( pc );
-                        break;
+						do_register( pc );
+						break;
 
 					case DEREGISTER_SERVER_REQ:
 					case DEREGISTER_CLIENT_REQ:
-                        do_deregister( pc );
+            do_deregister( pc );
 						break;
 
 					case CLIENT_CONNECT_REQ:
@@ -205,7 +205,7 @@ scheduler::ueber_scheduler::run()
 						break;
             
 					case SERVER_ACCEPT_REQ:
-                        do_accept ( pc );
+            do_accept ( pc );
 						break;
             
           default:
@@ -477,12 +477,63 @@ scheduler::ueber_scheduler::do_register( spawned_data& orig_mess )
     }
     else
     {
+        switch ( orig_mess.d )
+        {
+            case REGISTER_CLIENT_REQ:
+                resp.d = REGISTER_CLIENT_FAIL;
+                break;
+
+            case REGISTER_SERVER_REQ:
+                resp.d = REGISTER_SERVER_FAIL;
+                break;
+
+            default:
+                break;
+        }
     }
 }
 
 void
 scheduler::ueber_scheduler::do_deregister( spawned_data& orig_mess )
 {
+    spawned_data resp;
+    resp.p = orig_mess.p;
+    resp.receiver = orig_mess.sender;
+
+    int* fd = ( int* ) orig_mess.p;
+
+    if ( epoller->add( *fd ) )
+    {
+        switch ( orig_mess.d )
+        {
+            case REGISTER_CLIENT_REQ:
+                resp.d = REGISTER_CLIENT_OK;
+                break;
+
+            case REGISTER_SERVER_REQ:
+                resp.d = REGISTER_SERVER_OK;
+                break;
+
+            default:
+                break;
+        }
+    }
+    else
+    {
+        switch ( orig_mess.d )
+        {
+            case REGISTER_CLIENT_REQ:
+                resp.d = REGISTER_CLIENT_FAIL;
+                break;
+
+            case REGISTER_SERVER_REQ:
+                resp.d = REGISTER_SERVER_FAIL;
+                break;
+
+            default:
+                break;
+        }
+    }
 }
 
 void
