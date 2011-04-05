@@ -191,14 +191,21 @@ scheduler::ueber_scheduler::run()
 					}
 
 					case REGISTER_SERVER_REQ:
-					case DEREGISTER_SERVER_REQ:
 					case REGISTER_CLIENT_REQ:
+                        do_register( pc );
+                        break;
+
+					case DEREGISTER_SERVER_REQ:
 					case DEREGISTER_CLIENT_REQ:
-					case SERVER_ACCEPT_REQ:
+                        do_deregister( pc );
 						break;
 
 					case CLIENT_CONNECT_REQ:
 						do_connect( pc );
+						break;
+            
+					case SERVER_ACCEPT_REQ:
+                        do_accept ( pc );
 						break;
             
           default:
@@ -399,11 +406,83 @@ scheduler::ueber_scheduler::do_connect( spawned_data& orig_mess )
 	int orig_flags = ::fcntl( data->fd, F_GETFL );
 	::fcntl( data->fd, F_SETFL, orig_flags | O_NONBLOCK );
 
+    spawned_data resp;
+    resp.p = data;
+    resp.receiver = orig_mess.sender;
+
 	if ( posix::connect( data->fd, &data->saddr, sizeof( data->saddr ) ) == 0 )
 	{
 		// ok, włókno może używać
-
+        resp.d = CLIENT_CONNECT_OK;
 	}
+    else
+    {
+        resp.d = CLIENT_CONNECT_FAIL;
+    }
+    send( resp );
+    delete_from_blocked( data->fd );
+}
+
+void
+scheduler::ueber_scheduler::do_accept( spawned_data& orig_mess )
+{
+	accept_connect_data::ptr data = (accept_connect_data::ptr) orig_mess.p;
+	int orig_flags = ::fcntl( data->fd, F_GETFL );
+	::fcntl( data->fd, F_SETFL, orig_flags | O_NONBLOCK );
+
+    spawned_data resp;
+    resp.p = data;
+    resp.receiver = orig_mess.sender;
+
+    int accepted_fd;
+
+	if ( ( accepted_fd = posix::connect( data->fd, &data->saddr, sizeof( data->saddr ) ) ) > 0 )
+	{
+		// ok, włókno może używać
+        data->fd = accepted_fd;
+        resp.d = SERVER_ACCEPT_OK;
+	}
+    else
+    {
+        resp.d = SERVER_ACCEPT_FAIL;
+    }
+    send( resp );
+    delete_from_blocked( data->fd );
+}
+
+void
+scheduler::ueber_scheduler::do_register( spawned_data& orig_mess )
+{
+    spawned_data resp;
+    resp.p = orig_mess.p;
+    resp.receiver = orig_mess.sender;
+
+    int* fd = ( int* ) orig_mess.p;
+
+    if ( epoller->add( *fd ) )
+    {
+        switch ( orig_mess.d )
+        {
+            case REGISTER_CLIENT_REQ:
+                resp.d = REGISTER_CLIENT_OK;
+                break;
+
+            case REGISTER_SERVER_REQ:
+                resp.d = REGISTER_SERVER_OK;
+                break;
+
+            default:
+                break;
+        }
+    }
+    else
+    {
+    }
+}
+
+void
+scheduler::ueber_scheduler::do_deregister( spawned_data& orig_mess )
+{
 }
 
 void
