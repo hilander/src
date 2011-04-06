@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <err.h>
 #include <container.hpp>
+#include <sys/socket.h>
 #include "message_queue.hpp"
 
 namespace fiber
@@ -16,10 +17,6 @@ namespace fiber
 namespace scheduler
 {
 
-namespace posix
-{
-#include <sys/socket.h>
-}
 typedef container< fiber::fiber, std::map< fiber::fiber*, fiber::fiber* > > thread_container;
 
 enum data_kind
@@ -71,7 +68,7 @@ struct accept_connect_data
 	typedef accept_connect_data* ptr;
 
 	int fd;
-	posix::sockaddr saddr;
+	::sockaddr saddr;
 };
 
 struct spawned_data

@@ -25,9 +25,9 @@ class poller
 		 */
 		std::vector< ::epoll_event >* poll();
 
-		bool add( int fd_, uint32_t flags ) throw( std::exception);
+		bool add( int fd_, uint32_t flags ) throw( std::exception );
 
-		bool add( int fd_ ) throw( std::exception);
+		bool add( int fd_ ) throw( std::exception );
 
 		void remove( int fd_ );
 

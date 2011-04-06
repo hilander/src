@@ -1,5 +1,8 @@
 #include <iostream>
 #include <utility>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/socket.h>
 #include "poller.hpp"
 #include "scheduler.hpp"
 #include "userspace_scheduler.hpp"
@@ -21,13 +24,6 @@ namespace tools
       }
   };
 
-	namespace posix
-	{
-		#include <fcntl.h>
-		#include <unistd.h>
-		#include <sys/socket.h>
-	}
-  
 }
   
 }
@@ -410,7 +406,7 @@ scheduler::ueber_scheduler::do_connect( spawned_data& orig_mess )
     resp.p = data;
     resp.receiver = orig_mess.sender;
 
-	if ( posix::connect( data->fd, &data->saddr, sizeof( data->saddr ) ) == 0 )
+	if ( ::connect( data->fd, &data->saddr, sizeof( data->saddr ) ) == 0 )
 	{
 		// ok, włókno może używać
         resp.d = CLIENT_CONNECT_OK;
@@ -436,7 +432,7 @@ scheduler::ueber_scheduler::do_accept( spawned_data& orig_mess )
 
     int accepted_fd;
 
-	if ( ( accepted_fd = posix::connect( data->fd, &data->saddr, sizeof( data->saddr ) ) ) > 0 )
+	if ( ( accepted_fd = ::connect( data->fd, &data->saddr, sizeof( data->saddr ) ) ) > 0 )
 	{
 		// ok, włókno może używać
         data->fd = accepted_fd;
