@@ -128,7 +128,7 @@ scheduler::poller::remove( int fd_ )
 
   if ( removed != _events.end() )
   {
-  _events.erase( removed );
+    _events.erase( removed );
   }
 
   current_sockets_number--;

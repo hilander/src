@@ -128,7 +128,7 @@ scheduler::userspace_scheduler::spawn(fiber::fiber::ptr fiber)
 
 
 void 
-scheduler::userspace_scheduler::spawn(void* f, int )
+scheduler::userspace_scheduler::spawn(void* f, bool confirm )
 {
   fiber::fiber::ptr fiber = (fiber::fiber::ptr)f;
   
@@ -139,6 +139,13 @@ scheduler::userspace_scheduler::spawn(void* f, int )
   
   // Obciążenie: +1;
   workload++;
+
+  // spawn wywołany z zarządzanego włókna, nie wymaga potwierdzenia.
+  if ( !confirm )
+  {
+    return;
+  }
+
   //std::cout << workload << std::endl;
   spawned_data sp;
   sp.d = SPAWN_CONFIRMED;
@@ -194,12 +201,16 @@ scheduler::userspace_scheduler::read_messages()
 		spawned_data response;
     switch (sp.d)
     {
+      case BLOCKED:
+        workload--;
+        break;
+
       case END:
         finish();
         break;
 
       case SPAWN:
-        spawn(sp.p, 0);
+        spawn(sp.p, true);
 				response.d = SPAWN_CONFIRMED;
 				response.p = 0;
         break;
@@ -221,12 +232,10 @@ scheduler::userspace_scheduler::read_messages()
 			case SERVER_ACCEPT_FAIL:
 			case REGISTER_CLIENT_OK:
 			case REGISTER_CLIENT_FAIL:
-			case DEREGISTER_CLIENT_OK:
-			case DEREGISTER_CLIENT_FAIL:
 			case REGISTER_SERVER_OK:
 			case REGISTER_SERVER_FAIL:
-			case DEREGISTER_SERVER_OK:
-			case DEREGISTER_SERVER_FAIL:
+			case DEREGISTER_SOCKET_OK:
+			case DEREGISTER_SOCKET_FAIL:
 			{
 				// wiadomość będzie odebrana po stronie włókna
 				std::map< int, scheduler::data_kind* >::iterator socket_resp;
@@ -374,7 +383,7 @@ scheduler::userspace_scheduler::init_server( int fd_, fiber::fiber::ptr caller )
 }
 
 int
-scheduler::userspace_scheduler::accept( int fd_, fiber::fiber::ptr caller )
+scheduler::userspace_scheduler::accept( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data )
 {
 	// called from fiber side, must be suspended (blocking for fiber)
 	block( SERVER_ACCEPT_REQ, caller, fd_  );
@@ -440,6 +449,29 @@ scheduler::userspace_scheduler::connect( int fd_, fiber::fiber::ptr caller )
 			return false;
 
 		case CLIENT_CONNECT_OK:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
+bool
+scheduler::userspace_scheduler::close( int fd_, fiber::fiber::ptr caller )
+{
+	// called from fiber side, must be suspended (blocking for fiber)
+	block( DEREGISTER_SOCKET_REQ, caller, fd_  );
+	caller->yield();
+
+	// magically, we are back...
+	std::map< int, scheduler::data_kind* >::iterator socket_resp;
+	socket_resp = socket_descriptors.find( fd_ );
+	switch ( *( socket_resp->second ) )
+	{
+		case DEREGISTER_SOCKET_FAIL:
+			return false;
+
+		case DEREGISTER_SOCKET_OK:
 			return true;
 
 		default:

@@ -41,6 +41,9 @@ class fiber : public libcoro::coroutine
     void set_supervisor( scheduler::userspace_scheduler* supervisor_ );
     
   public: 
+
+    void spawn( fiber::fiber::ptr f );
+
     bool send( scheduler::spawned_data& message );
 
 		bool receive( scheduler::spawned_data& message );
@@ -55,14 +58,12 @@ class fiber : public libcoro::coroutine
 		bool write( std::vector< char >& buf, ssize_t& read_bytes, int fd_ );
 		
 		// server socket
-		bool init_server( int fd_ );
-
 		int accept( int fd_ );
 
 		// client socket
-		bool init_client( int fd_ );
-
 		bool connect( int fd_ );
+
+    bool close( int fd_ );
 
   public:
     libcoro::state_controller state;

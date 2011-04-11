@@ -191,8 +191,7 @@ scheduler::ueber_scheduler::run()
 						do_register( pc );
 						break;
 
-					case DEREGISTER_SERVER_REQ:
-					case DEREGISTER_CLIENT_REQ:
+					case DEREGISTER_SOCKET_REQ:
             do_deregister( pc );
 						break;
 
@@ -497,39 +496,8 @@ scheduler::ueber_scheduler::do_deregister( spawned_data& orig_mess )
     resp.receiver = orig_mess.sender;
 
     int* fd = ( int* ) orig_mess.p;
-
-    if ( epoller->add( *fd ) )
-    {
-        switch ( orig_mess.d )
-        {
-            case REGISTER_CLIENT_REQ:
-                resp.d = REGISTER_CLIENT_OK;
-                break;
-
-            case REGISTER_SERVER_REQ:
-                resp.d = REGISTER_SERVER_OK;
-                break;
-
-            default:
-                break;
-        }
-    }
-    else
-    {
-        switch ( orig_mess.d )
-        {
-            case REGISTER_CLIENT_REQ:
-                resp.d = REGISTER_CLIENT_FAIL;
-                break;
-
-            case REGISTER_SERVER_REQ:
-                resp.d = REGISTER_SERVER_FAIL;
-                break;
-
-            default:
-                break;
-        }
-    }
+    epoller->remove( *fd );
+    resp.d = DEREGISTER_SOCKET_OK;
 }
 
 void

@@ -66,11 +66,6 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 		 */
 		virtual void start();
 
-		/** \brief Utwórz wątek (uls side).
-		 * Ta metoda nie może byc wołana z zewnątrz uls-a, użyj spawn(fiber::fiber::ptr fiber).
-		 */
-		void spawn(void* f, int);
-
 		/** \brief Czy posiadamy jakieś wątki, które należy uruchomić?
 		 */
 		virtual bool empty();
@@ -90,9 +85,14 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
   public: // metody wymagane przez interfejs scheduler::abstract
 
     /** \brief Utwórz wątek i&nbsp;oddaj go w&nbsp;opiekę planiście.
-     * Ta metoda jest wystawiona dla użytkownika: wysyła żądanie do uls.
+     * Ta metoda wysyła żądanie do uls.
      */
     virtual void spawn( fiber::fiber::ptr fiber );
+
+		/** \brief Utwórz wątek (uls side).
+		 * Ta metoda nie może byc wołana z zewnątrz uls-a, użyj spawn(fiber::fiber::ptr fiber).
+		 */
+		void spawn(void* f, bool confirm);
 
     virtual bool send( spawned_data& data );
 
@@ -105,11 +105,13 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 
 		virtual bool init_server( int fd_, fiber::fiber::ptr caller );
 
-		virtual int accept( int fd_, fiber::fiber::ptr caller );
+		virtual int accept( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data );
 
 		virtual bool init_client( int fd_, fiber::fiber::ptr caller );
 
 		virtual bool connect( int fd_, fiber::fiber::ptr caller );
+
+    virtual bool close( int fd_, fiber::fiber::ptr caller );
 
 	private:
 		libcoro::coroutine::ptr base_coroutine;

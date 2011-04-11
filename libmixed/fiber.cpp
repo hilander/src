@@ -32,6 +32,12 @@ fiber::fiber::set_supervisor( scheduler::userspace_scheduler* supervisor_ )
   _supervisor = supervisor_;
 }
 
+void
+fiber::fiber::spawn( fiber::fiber::ptr f )
+{
+  _supervisor->spawn( f, false );
+}
+
 bool
 fiber::fiber::send( scheduler::spawned_data& message )
 {
@@ -91,29 +97,23 @@ fiber::fiber::write( std::vector< char >& buf_ , ssize_t& read_bytes_, int fd_  
 	return _supervisor->write( buf_ , read_bytes_, this, fd_  );
 }
 
-// wrappery dla serwera
-bool
-fiber::fiber::init_server( int fd_ )
-{
-	return _supervisor->init_server( fd_, this );
-}
-
 int
 fiber::fiber::accept( int fd_ )
 {
-	return _supervisor->accept( fd_, this );
+  scheduler::accept_connect_data data;
+	return _supervisor->accept( fd_, this, &data );
 }
 
 // wrappery dla klienta
 // note: po accept() klientem jest również otrzymany fd
 bool
-fiber::fiber::init_client( int fd_ )
-{
-	return _supervisor->init_client( fd_, this );
-}
-
-bool
 fiber::fiber::connect( int fd_ )
 {
 	return _supervisor->connect( fd_, this );
+}
+
+bool
+fiber::fiber::close( int fd_ )
+{
+  return _supervisor->close( fd_, this );
 }
