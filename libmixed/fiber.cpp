@@ -109,11 +109,12 @@ fiber::fiber::accept( int fd_ )
 bool
 fiber::fiber::connect( int fd_ )
 {
-	return _supervisor->connect( fd_, this );
+  scheduler::accept_connect_data data;
+	return _supervisor->connect( fd_, this, &data );
 }
 
 bool
-fiber::fiber::close( int fd_ )
+fiber::fiber::do_close( int fd_ )
 {
   return _supervisor->close( fd_, this );
 }

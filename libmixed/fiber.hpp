@@ -63,7 +63,7 @@ class fiber : public libcoro::coroutine
 		// client socket
 		bool connect( int fd_ );
 
-    bool close( int fd_ );
+    bool do_close( int fd_ );
 
   public:
     libcoro::state_controller state;

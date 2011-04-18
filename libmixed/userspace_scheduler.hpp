@@ -76,6 +76,8 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 
 		/** \brief Zablokuj wątek.
 		 */
+		void block( scheduler::data_kind k, fiber::fiber::ptr f, void* data_ );
+
 		void block( scheduler::data_kind k, fiber::fiber::ptr f, int fd_ );
 
 		void read_messages();
@@ -109,7 +111,7 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 
 		virtual bool init_client( int fd_, fiber::fiber::ptr caller );
 
-		virtual bool connect( int fd_, fiber::fiber::ptr caller );
+		virtual bool connect( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data );
 
     virtual bool close( int fd_, fiber::fiber::ptr caller );
 

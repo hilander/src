@@ -137,6 +137,7 @@ scheduler::userspace_scheduler::spawn(void* f, bool confirm )
   
   ready.insert( fiber );
   
+  fiber->set_supervisor( this );
   // Obciążenie: +1;
   workload++;
 
@@ -185,7 +186,20 @@ scheduler::userspace_scheduler::block( scheduler::data_kind k, fiber::fiber::ptr
 	message.sender = caller;
 
 	caller->state.block();
-	ready.erase( caller );
+	ready.erase( caller ); // zmniejszenie workloadu po otrzymaniu potwierdzenia od ueber_schedulera
+  send( message );
+}
+
+void 
+scheduler::userspace_scheduler::block( scheduler::data_kind k, fiber::fiber::ptr caller, void* data_ )
+{
+	spawned_data message;
+	message.d = k;
+	message.p = data_;
+	message.sender = caller;
+
+	caller->state.block();
+	ready.erase( caller ); // zmniejszenie workloadu po otrzymaniu potwierdzenia od ueber_schedulera
   send( message );
 }
 
@@ -227,9 +241,9 @@ scheduler::userspace_scheduler::read_messages()
 			case SOCKET_READ_READY:
 			case SOCKET_WRITE_READY:
 			case SOCKET_WRITE_FAIL:
-			case CLIENT_CONNECT_OK:
-			case CLIENT_CONNECT_FAIL:
-			case SERVER_ACCEPT_FAIL:
+			case CLIENT_CONNECT_OK: // TODO Inny flow wiadomości, powoduje wywalenie aplikacji!!!
+			case CLIENT_CONNECT_FAIL: // TODO Inny flow wiadomości, powoduje wywalenie aplikacji!!!
+			case SERVER_ACCEPT_FAIL: // TODO Inny flow wiadomości, powoduje wywalenie aplikacji!!!
 			case REGISTER_CLIENT_OK:
 			case REGISTER_CLIENT_FAIL:
 			case REGISTER_SERVER_OK:
@@ -250,7 +264,7 @@ scheduler::userspace_scheduler::read_messages()
 				break;
 			}
 
-			case SERVER_ACCEPT_OK:
+			case SERVER_ACCEPT_OK: // TODO Inny flow wiadomości, powoduje wywalenie aplikacji!!!
 			{
 				// temporary solution: para < deskryptor źródłowy, wynik accept() - niezerowy >
 				std::pair< int, int >* received_pair = (std::pair< int, int >*) sp.p;
@@ -434,7 +448,7 @@ scheduler::userspace_scheduler::init_client( int fd_, fiber::fiber::ptr caller )
 }
 
 bool
-scheduler::userspace_scheduler::connect( int fd_, fiber::fiber::ptr caller )
+scheduler::userspace_scheduler::connect( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data )
 {
 	// called from fiber side, must be suspended (blocking for fiber)
 	block( CLIENT_CONNECT_REQ, caller, fd_  );
