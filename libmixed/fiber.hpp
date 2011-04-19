@@ -58,10 +58,10 @@ class fiber : public libcoro::coroutine
 		bool write( std::vector< char >& buf, ssize_t& read_bytes, int fd_ );
 		
 		// server socket
-		int accept( int fd_ );
+		int accept( int fd_, ::sockaddr& saddr );
 
 		// client socket
-		bool connect( int fd_ );
+		bool connect( int fd_, ::sockaddr& saddr );
 
     bool do_close( int fd_ );
 

@@ -191,7 +191,7 @@ scheduler::userspace_scheduler::block( scheduler::data_kind k, fiber::fiber::ptr
 }
 
 void 
-scheduler::userspace_scheduler::block( scheduler::data_kind k, fiber::fiber::ptr caller, void* data_ )
+scheduler::userspace_scheduler::block( scheduler::data_kind k, fiber::fiber::ptr caller, accept_connect_data::ptr data_ )
 {
 	spawned_data message;
 	message.d = k;
@@ -243,6 +243,7 @@ scheduler::userspace_scheduler::read_messages()
 			case SOCKET_WRITE_FAIL:
 			case CLIENT_CONNECT_OK: // TODO Inny flow wiadomości, powoduje wywalenie aplikacji!!!
 			case CLIENT_CONNECT_FAIL: // TODO Inny flow wiadomości, powoduje wywalenie aplikacji!!!
+			case SERVER_ACCEPT_OK: // TODO Inny flow wiadomości, powoduje wywalenie aplikacji!!!
 			case SERVER_ACCEPT_FAIL: // TODO Inny flow wiadomości, powoduje wywalenie aplikacji!!!
 			case REGISTER_CLIENT_OK:
 			case REGISTER_CLIENT_FAIL:
@@ -250,6 +251,15 @@ scheduler::userspace_scheduler::read_messages()
 			case REGISTER_SERVER_FAIL:
 			case DEREGISTER_SOCKET_OK:
 			case DEREGISTER_SOCKET_FAIL:
+			{
+				// odblokuj i wyślij wiadomość do włókna
+				fiber::fiber::ptr fp = sp.sender;
+				fp->state.unblock();
+				ready.insert( fp );
+				send( sp );
+				break;
+			}
+/*
 			{
 				// wiadomość będzie odebrana po stronie włókna
 				std::map< int, scheduler::data_kind* >::iterator socket_resp;
@@ -267,7 +277,7 @@ scheduler::userspace_scheduler::read_messages()
 			case SERVER_ACCEPT_OK: // TODO Inny flow wiadomości, powoduje wywalenie aplikacji!!!
 			{
 				// temporary solution: para < deskryptor źródłowy, wynik accept() - niezerowy >
-				std::pair< int, int >* received_pair = (std::pair< int, int >*) sp.p;
+				accept_connect_data::ptr received_data = (accept_connect_data::ptr) sp.p;
 
 				// nie powinno sprawiać problemów, chociaż wydaje się być niebezpieczne
 				waiting_descriptors.insert( *received_pair );
@@ -288,6 +298,7 @@ scheduler::userspace_scheduler::read_messages()
 				ready.insert( fp );
 				break;
 			}
+*/
 
       default:
         break;
@@ -327,7 +338,7 @@ scheduler::userspace_scheduler::ended()
 	return _ended;
 }
 
-bool
+void
 scheduler::userspace_scheduler::read( std::vector< char >& buf_ , ssize_t& read_bytes_, fiber::fiber::ptr caller, int fd_ )
 {
 	// called from fiber side, must be suspended (blocking for fiber)
@@ -335,6 +346,8 @@ scheduler::userspace_scheduler::read( std::vector< char >& buf_ , ssize_t& read_
 	caller->yield();
 
 	// magically, we are back...
+	// no more robota needed here...
+	/*
 	std::map< int, scheduler::data_kind* >::iterator socket_resp;
 	socket_resp = socket_descriptors.find( fd_ );
 	switch ( *( socket_resp->second ) )
@@ -348,9 +361,10 @@ scheduler::userspace_scheduler::read( std::vector< char >& buf_ , ssize_t& read_
 		default:
 			return false;
 	}
+	*/
 }
                                                                 
-bool
+void
 scheduler::userspace_scheduler::write( std::vector< char >& buf_ , ssize_t& read_bytes_, fiber::fiber::ptr caller, int fd_ )
 {
 	// called from fiber side, must be suspended (blocking for fiber)
@@ -358,6 +372,8 @@ scheduler::userspace_scheduler::write( std::vector< char >& buf_ , ssize_t& read
 	caller->yield();
 
 	// magically, we are back...
+	// no more robota needed here...
+	/*
 	std::map< int, scheduler::data_kind* >::iterator socket_resp;
 	socket_resp = socket_descriptors.find( fd_ );
 	switch ( *( socket_resp->second ) )
@@ -371,6 +387,7 @@ scheduler::userspace_scheduler::write( std::vector< char >& buf_ , ssize_t& read
 		default:
 			return false;
 	}
+	*/
 }
 
 bool
@@ -396,7 +413,7 @@ scheduler::userspace_scheduler::init_server( int fd_, fiber::fiber::ptr caller )
 	}
 }
 
-int
+void
 scheduler::userspace_scheduler::accept( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data )
 {
 	// called from fiber side, must be suspended (blocking for fiber)
@@ -404,6 +421,8 @@ scheduler::userspace_scheduler::accept( int fd_, fiber::fiber::ptr caller, accep
 	caller->yield();
 
 	// magically, we are back...
+	// no more robota needed here...
+	/*
 	std::map< int, scheduler::data_kind* >::iterator socket_resp;
 	socket_resp = socket_descriptors.find( fd_ );
 	switch ( *( socket_resp->second ) )
@@ -422,6 +441,7 @@ scheduler::userspace_scheduler::accept( int fd_, fiber::fiber::ptr caller, accep
 		default:
 			return -1;
 	}
+	*/
 }
 
 bool
@@ -447,7 +467,7 @@ scheduler::userspace_scheduler::init_client( int fd_, fiber::fiber::ptr caller )
 	}
 }
 
-bool
+void
 scheduler::userspace_scheduler::connect( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data )
 {
 	// called from fiber side, must be suspended (blocking for fiber)
@@ -455,6 +475,8 @@ scheduler::userspace_scheduler::connect( int fd_, fiber::fiber::ptr caller, acce
 	caller->yield();
 
 	// magically, we are back...
+	// no more robota needed here...
+	/*
 	std::map< int, scheduler::data_kind* >::iterator socket_resp;
 	socket_resp = socket_descriptors.find( fd_ );
 	switch ( *( socket_resp->second ) )
@@ -468,9 +490,10 @@ scheduler::userspace_scheduler::connect( int fd_, fiber::fiber::ptr caller, acce
 		default:
 			return false;
 	}
+	*/
 }
 
-bool
+void
 scheduler::userspace_scheduler::close( int fd_, fiber::fiber::ptr caller )
 {
 	// called from fiber side, must be suspended (blocking for fiber)
@@ -478,6 +501,8 @@ scheduler::userspace_scheduler::close( int fd_, fiber::fiber::ptr caller )
 	caller->yield();
 
 	// magically, we are back...
+	// no more robota needed here...
+	/*
 	std::map< int, scheduler::data_kind* >::iterator socket_resp;
 	socket_resp = socket_descriptors.find( fd_ );
 	switch ( *( socket_resp->second ) )
@@ -491,5 +516,6 @@ scheduler::userspace_scheduler::close( int fd_, fiber::fiber::ptr caller )
 		default:
 			return false;
 	}
+	*/
 }
 

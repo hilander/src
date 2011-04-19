@@ -76,7 +76,7 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 
 		/** \brief Zablokuj wątek.
 		 */
-		void block( scheduler::data_kind k, fiber::fiber::ptr f, void* data_ );
+		void block( scheduler::data_kind k, fiber::fiber::ptr f, accept_connect_data::ptr data );
 
 		void block( scheduler::data_kind k, fiber::fiber::ptr f, int fd_ );
 
@@ -101,27 +101,27 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 		virtual bool receive( spawned_data& data );
 
 		//sockets
-		virtual bool read( std::vector< char >& buf_ , ssize_t& read_bytes_, fiber::fiber::ptr caller, int fd_ );
+		virtual void read( std::vector< char >& buf_ , ssize_t& read_bytes_, fiber::fiber::ptr caller, int fd_ );
 
-		virtual bool write( std::vector< char >& buf_ , ssize_t& read_bytes_, fiber::fiber::ptr caller, int fd_ );
+		virtual void write( std::vector< char >& buf_ , ssize_t& read_bytes_, fiber::fiber::ptr caller, int fd_ );
 
 		virtual bool init_server( int fd_, fiber::fiber::ptr caller );
 
-		virtual int accept( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data );
+		virtual void accept( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data );
 
 		virtual bool init_client( int fd_, fiber::fiber::ptr caller );
 
-		virtual bool connect( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data );
+		virtual void connect( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data );
 
-    virtual bool close( int fd_, fiber::fiber::ptr caller );
+    virtual void close( int fd_, fiber::fiber::ptr caller );
 
 	private:
 		libcoro::coroutine::ptr base_coroutine;
 		libmanager::manager::ptr manager;
 
 		thread_container ready;
-		std::map< int, scheduler::data_kind* > socket_descriptors;
-		std::map< int, int > waiting_descriptors;
+		//std::map< int, scheduler::data_kind* > socket_descriptors;
+		//std::map< int, int > waiting_descriptors;
 
 		bool scheduler_end;
 		int workload;

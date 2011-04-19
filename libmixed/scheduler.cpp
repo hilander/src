@@ -442,7 +442,7 @@ scheduler::ueber_scheduler::do_accept( spawned_data& orig_mess )
         resp.d = SERVER_ACCEPT_FAIL;
     }
     send( resp );
-    delete_from_blocked( data->fd );
+    // delete_from_blocked( data->fd );
 }
 
 void
