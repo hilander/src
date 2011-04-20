@@ -105,11 +105,11 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 
 		virtual void write( std::vector< char >& buf_ , ssize_t& read_bytes_, fiber::fiber::ptr caller, int fd_ );
 
-		virtual bool init_server( int fd_, fiber::fiber::ptr caller );
+		virtual void init_server( int fd_, fiber::fiber::ptr caller );
 
 		virtual void accept( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data );
 
-		virtual bool init_client( int fd_, fiber::fiber::ptr caller );
+		virtual void init_client( int fd_, fiber::fiber::ptr caller );
 
 		virtual void connect( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data );
 

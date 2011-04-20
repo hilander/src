@@ -390,7 +390,7 @@ scheduler::userspace_scheduler::write( std::vector< char >& buf_ , ssize_t& read
 	*/
 }
 
-bool
+void
 scheduler::userspace_scheduler::init_server( int fd_, fiber::fiber::ptr caller )
 {
 	// called from fiber side, must be suspended (blocking for fiber)
@@ -398,6 +398,8 @@ scheduler::userspace_scheduler::init_server( int fd_, fiber::fiber::ptr caller )
 	caller->yield();
 
 	// magically, we are back...
+	// no more robota needed here...
+	/*
 	std::map< int, scheduler::data_kind* >::iterator socket_resp;
 	socket_resp = socket_descriptors.find( fd_ );
 	switch ( *( socket_resp->second ) )
@@ -411,6 +413,7 @@ scheduler::userspace_scheduler::init_server( int fd_, fiber::fiber::ptr caller )
 		default:
 			return false;
 	}
+  */
 }
 
 void
@@ -444,7 +447,7 @@ scheduler::userspace_scheduler::accept( int fd_, fiber::fiber::ptr caller, accep
 	*/
 }
 
-bool
+void
 scheduler::userspace_scheduler::init_client( int fd_, fiber::fiber::ptr caller )
 {
 	// called from fiber side, must be suspended (blocking for fiber)
@@ -452,6 +455,8 @@ scheduler::userspace_scheduler::init_client( int fd_, fiber::fiber::ptr caller )
 	caller->yield();
 
 	// magically, we are back...
+	// no more robota needed here...
+	/*
 	std::map< int, scheduler::data_kind* >::iterator socket_resp;
 	socket_resp = socket_descriptors.find( fd_ );
 	switch ( *( socket_resp->second ) )
@@ -465,6 +470,7 @@ scheduler::userspace_scheduler::init_client( int fd_, fiber::fiber::ptr caller )
 		default:
 			return false;
 	}
+  */
 }
 
 void

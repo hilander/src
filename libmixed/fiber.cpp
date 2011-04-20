@@ -196,5 +196,5 @@ fiber::fiber::connect( int fd_, ::sockaddr& saddr )
 bool
 fiber::fiber::do_close( int fd_ )
 {
-  return _supervisor->close( fd_, this );
+  _supervisor->close( fd_, this );
 }
