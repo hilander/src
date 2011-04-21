@@ -17,6 +17,8 @@ namespace fiber
 namespace scheduler
 {
 
+class userspace_scheduler;
+
 typedef container< fiber::fiber, std::map< fiber::fiber*, fiber::fiber* > > thread_container;
 
 enum data_kind
@@ -76,6 +78,7 @@ struct spawned_data
     void* p;                // additional data
 		fiber::fiber* sender;
 		fiber::fiber* receiver;
+		userspace_scheduler* supervisor;
 
 	public:
 		static void rewrite( spawned_data& target, spawned_data& source );

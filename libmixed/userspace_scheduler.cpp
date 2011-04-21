@@ -184,6 +184,7 @@ scheduler::userspace_scheduler::block( scheduler::data_kind k, fiber::fiber::ptr
 	message.d = k;
 	message.p = &fd_;
 	message.sender = caller;
+	message.supervisor = this;
 
 	caller->state.block();
 	ready.erase( caller ); // zmniejszenie workloadu po otrzymaniu potwierdzenia od ueber_schedulera
@@ -253,7 +254,7 @@ scheduler::userspace_scheduler::read_messages()
 			case DEREGISTER_SOCKET_FAIL:
 			{
 				// odblokuj i wyślij wiadomość do włókna
-				fiber::fiber::ptr fp = sp.sender;
+				fiber::fiber::ptr fp = sp.receiver;
 				fp->state.unblock();
 				ready.insert( fp );
 				send( sp );
