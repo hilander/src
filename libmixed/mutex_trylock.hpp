@@ -26,10 +26,10 @@ class trylock
 
 		trylock( const trylock& );
 
-		bool _locked;
-
 		std::tr1::shared_ptr< ::pthread_mutex_t > _m;
     
+		bool _locked;
+
     trylock* operator* ();
 };
 

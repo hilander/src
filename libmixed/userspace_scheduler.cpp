@@ -1,5 +1,9 @@
+#include <cassert>
+#include <algorithm>
+#include <netinet/in.h>
 #include "userspace_scheduler.hpp"
 #include "scheduler.hpp"
+#include "poller.hpp"
 
 scheduler::userspace_scheduler::userspace_scheduler(ueber_scheduler* ptr)
 : workload(0), us(ptr), _ended( false )
@@ -53,6 +57,8 @@ scheduler::userspace_scheduler::init( raw_pipe::ptr message_pipe )
     pthread_attr_init( &uls_attr );
     // inicjalizacja zakończona: można uruchomić wątek, w którym będzie działać scheduler.
     pthread_create( &uls_thread, &uls_attr, &userspace_scheduler::go, (void*)this );
+    epolls = 0;
+    _epoller = poller::get();
 }
 
 
@@ -82,10 +88,43 @@ scheduler::userspace_scheduler::finish()
 }
 
 void 
+scheduler::userspace_scheduler::do_epolls()
+{
+	using std::vector;
+	using std::map;
+	
+  if ( epolls == 0 )
+  {
+    return;
+  }
+
+	epoll_state = _epoller->poll();
+
+  if ( epoll_state == 0 )
+  {
+    return;
+  }
+
+	for ( vector< ::epoll_event >::iterator it = epoll_state->begin()
+			; it != epoll_state->end()
+			; it++ )
+	{
+		map< int, fiber::fiber::ptr >::iterator found = blocked.find( it->data.fd );
+		if ( found != blocked.end() )
+		{
+      //std::cout << "." << it->data.fd ; std::cout.flush();
+			found->second->state.unblock();
+			blocked.erase( found );
+		}
+	}
+}
+
+void 
 scheduler::userspace_scheduler::run()
 {
   while ( !finished() )
   {
+		do_epolls();
     read_messages();
     
     fiber::fiber::ptr running = ready.get();
@@ -177,31 +216,11 @@ scheduler::userspace_scheduler::get_workload()
 
 /*
 */
-void 
-scheduler::userspace_scheduler::block( scheduler::data_kind k, fiber::fiber::ptr caller, int fd_ )
+void
+scheduler::userspace_scheduler::block( fiber::fiber::ptr f, scheduler::read_write_data& d )
 {
-	spawned_data message;
-	message.d = k;
-	message.p = &fd_;
-	message.sender = caller;
-	message.supervisor = this;
-
-	caller->state.block();
-	ready.erase( caller ); // zmniejszenie workloadu po otrzymaniu potwierdzenia od ueber_schedulera
-  send( message );
-}
-
-void 
-scheduler::userspace_scheduler::block( scheduler::data_kind k, fiber::fiber::ptr caller, accept_connect_data::ptr data_ )
-{
-	spawned_data message;
-	message.d = k;
-	message.p = data_;
-	message.sender = caller;
-
-	caller->state.block();
-	ready.erase( caller ); // zmniejszenie workloadu po otrzymaniu potwierdzenia od ueber_schedulera
-  send( message );
+	f->state.block();
+	blocked.insert( std::pair< int, fiber::fiber::ptr >( d.fd, f ) );
 }
 
 void 
@@ -237,69 +256,6 @@ scheduler::userspace_scheduler::read_messages()
           sp.receiver->receive_data( sp );
         }
 				break;
-
-			case SOCKET_READ_FAIL:
-			case SOCKET_READ_READY:
-			case SOCKET_WRITE_READY:
-			case SOCKET_WRITE_FAIL:
-			case CLIENT_CONNECT_OK: // TODO Inny flow wiadomości, powoduje wywalenie aplikacji!!!
-			case CLIENT_CONNECT_FAIL: // TODO Inny flow wiadomości, powoduje wywalenie aplikacji!!!
-			case SERVER_ACCEPT_OK: // TODO Inny flow wiadomości, powoduje wywalenie aplikacji!!!
-			case SERVER_ACCEPT_FAIL: // TODO Inny flow wiadomości, powoduje wywalenie aplikacji!!!
-			case REGISTER_CLIENT_OK:
-			case REGISTER_CLIENT_FAIL:
-			case REGISTER_SERVER_OK:
-			case REGISTER_SERVER_FAIL:
-			case DEREGISTER_SOCKET_OK:
-			case DEREGISTER_SOCKET_FAIL:
-			{
-				// odblokuj i wyślij wiadomość do włókna
-				fiber::fiber::ptr fp = sp.receiver;
-				fp->state.unblock();
-				ready.insert( fp );
-				send( sp );
-				break;
-			}
-/*
-			{
-				// wiadomość będzie odebrana po stronie włókna
-				std::map< int, scheduler::data_kind* >::iterator socket_resp;
-				int* descriptor_to_find = (int*) (sp.p);
-				socket_resp = socket_descriptors.find( *descriptor_to_find );
-				*( socket_resp->second ) = sp.d;
-
-				// włókno gotowe do ponownego uruchomienia
-				fiber::fiber::ptr fp = sp.sender;
-				fp->state.unblock();
-				ready.insert( fp );
-				break;
-			}
-
-			case SERVER_ACCEPT_OK: // TODO Inny flow wiadomości, powoduje wywalenie aplikacji!!!
-			{
-				// temporary solution: para < deskryptor źródłowy, wynik accept() - niezerowy >
-				accept_connect_data::ptr received_data = (accept_connect_data::ptr) sp.p;
-
-				// nie powinno sprawiać problemów, chociaż wydaje się być niebezpieczne
-				waiting_descriptors.insert( *received_pair );
-
-				// wiadomość będzie odebrana po stronie włókna
-				std::map< int, scheduler::data_kind* >::iterator socket_resp;
-				int descriptor_to_find = received_pair->first;
-				socket_resp = socket_descriptors.find( descriptor_to_find );
-				*( socket_resp->second ) = sp.d;
-
-				// dodaj do odebranych wiadomości
-				std::pair< int, scheduler::data_kind* > accepted_pair( received_pair->second, new scheduler::data_kind() );
-				socket_descriptors.insert( accepted_pair );
-
-				// włókno gotowe do ponownego uruchomienia
-				fiber::fiber::ptr fp = sp.sender;
-				fp->state.unblock();
-				ready.insert( fp );
-				break;
-			}
-*/
 
       default:
         break;
@@ -339,190 +295,107 @@ scheduler::userspace_scheduler::ended()
 	return _ended;
 }
 
-void
-scheduler::userspace_scheduler::read( std::vector< char >& buf_ , ssize_t& read_bytes_, fiber::fiber::ptr caller, int fd_ )
+struct state_finder
 {
-	// called from fiber side, must be suspended (blocking for fiber)
-	block( SOCKET_READ_REQ, caller, fd_ );
+	state_finder( int fd_ )
+		: fd( fd_ )
+	{
+	}
+	bool operator() ( ::epoll_event& ev )
+	{
+		return ev.data.fd == fd;
+	}
+
+	private:
+	int fd;
+};
+
+bool
+scheduler::userspace_scheduler::read( fiber::fiber::ptr caller, read_write_data& data_, ssize_t& read_bytes_ )
+{
+	using std::vector;
+	
+  assert( _epoller->contains( data_.fd ) );
+	data_.req.request = socket_req::SOCKET_READ_REQ;
+	block( (fiber::fiber*)caller, data_ );
 	caller->yield();
 
-	// magically, we are back...
-	// no more robota needed here...
-	/*
-	std::map< int, scheduler::data_kind* >::iterator socket_resp;
-	socket_resp = socket_descriptors.find( fd_ );
-	switch ( *( socket_resp->second ) )
+	// we are unblocked!
+	vector< ::epoll_event >::iterator ev = std::find_if( epoll_state->begin(), epoll_state->end(), state_finder( data_.fd ) );
+	if ( ev->events & EPOLLIN )
 	{
-		case SOCKET_READ_FAIL:
-			return false;
-
-		case SOCKET_READ_REQ:
-			return ( read_bytes_ = ::read( fd_, &buf_[0], buf_.size() ) ) > 0;
-
-		default:
-			return false;
+		void* tmp = data_.buf;
+		read_bytes_ = ::read( data_.fd, tmp, data_.size );
+		return (read_bytes_ > 0) ? true : false;
 	}
-	*/
+	return false;
 }
                                                                 
-void
-scheduler::userspace_scheduler::write( std::vector< char >& buf_ , ssize_t& read_bytes_, fiber::fiber::ptr caller, int fd_ )
+bool
+scheduler::userspace_scheduler::write( fiber::fiber::ptr caller, read_write_data& data_, ssize_t& written_bytes_ )
 {
-	// called from fiber side, must be suspended (blocking for fiber)
-	block( SOCKET_WRITE_REQ, caller, fd_  );
+	using std::vector;
+	
+  assert( _epoller->contains( data_.fd ) );
+	data_.req.request = socket_req::SOCKET_WRITE_REQ;
+	block( (fiber::fiber*)caller, data_ );
 	caller->yield();
 
-	// magically, we are back...
-	// no more robota needed here...
-	/*
-	std::map< int, scheduler::data_kind* >::iterator socket_resp;
-	socket_resp = socket_descriptors.find( fd_ );
-	switch ( *( socket_resp->second ) )
+	// we are unblocked!
+	vector< ::epoll_event >::iterator ev = std::find_if( epoll_state->begin(), epoll_state->end(), state_finder( data_.fd ) );
+	if ( ev->events & EPOLLOUT )
 	{
-		case SOCKET_WRITE_FAIL:
-			return false;
-
-		case SOCKET_WRITE_READY:
-			return ( read_bytes_ = ::write( fd_, &buf_[0], buf_.size() ) ) > 0;
-
-		default:
-			return false;
+		void* tmp = data_.buf;
+		written_bytes_ = ::write( data_.fd, tmp, data_.size );
+    std::cout << "," ; std::cout.flush();
+		return (written_bytes_ > 0) ? true : false;
 	}
-	*/
+	return false;
 }
 
 void
-scheduler::userspace_scheduler::init_server( int fd_, fiber::fiber::ptr caller )
+scheduler::userspace_scheduler::init_server( int fd_ )
 {
-	// called from fiber side, must be suspended (blocking for fiber)
-	block( REGISTER_SERVER_REQ, caller, fd_  );
-	caller->yield();
+  _epoller->add( fd_ );
+  epolls++;
+}
 
-	// magically, we are back...
-	// no more robota needed here...
-	/*
-	std::map< int, scheduler::data_kind* >::iterator socket_resp;
-	socket_resp = socket_descriptors.find( fd_ );
-	switch ( *( socket_resp->second ) )
-	{
-		case REGISTER_SERVER_FAIL:
-			return false;
+bool
+scheduler::userspace_scheduler::accept( int fd_, accept_connect_data::ptr data )
+{
+  int accepted = 0;
 
-		case REGISTER_SERVER_OK:
-			return true;
-
-		default:
-			return false;
-	}
-  */
+  socklen_t sl = sizeof( ::sockaddr_in );
+  if ( ( accepted = ::accept4( data->fd, &(data->saddr), &sl, SOCK_NONBLOCK ) ) != 0 )
+  {
+    data->fd = accepted;
+    return true;
+  }
+  else
+  {
+    return false;
+  }
 }
 
 void
-scheduler::userspace_scheduler::accept( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data )
+scheduler::userspace_scheduler::init_client( int fd_ )
 {
-	// called from fiber side, must be suspended (blocking for fiber)
-	block( SERVER_ACCEPT_REQ, caller, fd_  );
-	caller->yield();
+  _epoller->add( fd_ );
+  epolls++;
+}
 
-	// magically, we are back...
-	// no more robota needed here...
-	/*
-	std::map< int, scheduler::data_kind* >::iterator socket_resp;
-	socket_resp = socket_descriptors.find( fd_ );
-	switch ( *( socket_resp->second ) )
-	{
-		case SERVER_ACCEPT_FAIL:
-			return 0;
-
-		case SERVER_ACCEPT_OK:
-		{
-			std::map< int, int >::iterator desc_pair = waiting_descriptors.find( fd_ );
-			int accepted_socket = desc_pair->second;
-			waiting_descriptors.erase( desc_pair );
-			return accepted_socket;
-		}
-
-		default:
-			return -1;
-	}
-	*/
+bool
+scheduler::userspace_scheduler::connect( int fd_, accept_connect_data::ptr data )
+{
+  return ( ::connect( data->fd, &data->saddr, sizeof(::sockaddr_in) ) == 0 );
+  std::cout << "."; std::cout.flush();
 }
 
 void
-scheduler::userspace_scheduler::init_client( int fd_, fiber::fiber::ptr caller )
+scheduler::userspace_scheduler::close( int fd_ )
 {
-	// called from fiber side, must be suspended (blocking for fiber)
-	block( REGISTER_CLIENT_REQ, caller, fd_  );
-	caller->yield();
-
-	// magically, we are back...
-	// no more robota needed here...
-	/*
-	std::map< int, scheduler::data_kind* >::iterator socket_resp;
-	socket_resp = socket_descriptors.find( fd_ );
-	switch ( *( socket_resp->second ) )
-	{
-		case REGISTER_CLIENT_FAIL:
-			return false;
-
-		case REGISTER_CLIENT_OK:
-			return true;
-
-		default:
-			return false;
-	}
-  */
-}
-
-void
-scheduler::userspace_scheduler::connect( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data )
-{
-	// called from fiber side, must be suspended (blocking for fiber)
-	block( CLIENT_CONNECT_REQ, caller, fd_  );
-	caller->yield();
-
-	// magically, we are back...
-	// no more robota needed here...
-	/*
-	std::map< int, scheduler::data_kind* >::iterator socket_resp;
-	socket_resp = socket_descriptors.find( fd_ );
-	switch ( *( socket_resp->second ) )
-	{
-		case CLIENT_CONNECT_FAIL:
-			return false;
-
-		case CLIENT_CONNECT_OK:
-			return true;
-
-		default:
-			return false;
-	}
-	*/
-}
-
-void
-scheduler::userspace_scheduler::close( int fd_, fiber::fiber::ptr caller )
-{
-	// called from fiber side, must be suspended (blocking for fiber)
-	block( DEREGISTER_SOCKET_REQ, caller, fd_  );
-	caller->yield();
-
-	// magically, we are back...
-	// no more robota needed here...
-	/*
-	std::map< int, scheduler::data_kind* >::iterator socket_resp;
-	socket_resp = socket_descriptors.find( fd_ );
-	switch ( *( socket_resp->second ) )
-	{
-		case DEREGISTER_SOCKET_FAIL:
-			return false;
-
-		case DEREGISTER_SOCKET_OK:
-			return true;
-
-		default:
-			return false;
-	}
-	*/
+  _epoller->remove( fd_ );
+  ::close( fd_ );
+  epolls--;
 }
 

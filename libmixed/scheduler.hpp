@@ -91,18 +91,6 @@ class ueber_scheduler : public libcoro::coroutine, public abstract
 
 		void create_local_schedulers();
 
-		void do_epolls();
-
-		void do_connect( spawned_data& orig_mess );
-
-        void do_accept( spawned_data& orig_mess );
-
-        void do_register( spawned_data& orig_mess );
-
-        void do_deregister( spawned_data& orig_mess );
-
-		void set_epoll_response( ::epoll_event& e, spawned_data& resp, spawned_data& orig_mess );
-
 		static void* stub_go( void* obj );
 
 		::pthread_barrier_t barrier;
@@ -122,7 +110,6 @@ class ueber_scheduler : public libcoro::coroutine, public abstract
 		userspace_scheduler::list schedulers;
 		libmanager::manager man;
 		std::list<raw_pipe*> pipes;
-		poller::ptr epoller;
 };
 
 }

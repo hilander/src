@@ -12,6 +12,7 @@ namespace scheduler
   class abstract;
 	class userspace_scheduler;
   struct spawned_data;
+	struct accept_connect_data;
 }
 
 /** \brief Przestrzeń nazw klas podstawowych dla wątków.
@@ -58,12 +59,12 @@ class fiber : public libcoro::coroutine
 		bool write( std::vector< char >& buf, ssize_t& read_bytes, int fd_ );
 		
 		// server socket
-		int accept( int fd_, ::sockaddr& saddr );
+		bool accept( int fd_, scheduler::accept_connect_data& data_ );
 
 		// client socket
-		bool connect( int fd_, ::sockaddr& saddr );
+		bool connect( int fd_, scheduler::accept_connect_data& data_ );
 
-    bool do_close( int fd_ );
+    void do_close( int fd_ );
 
   public:
     libcoro::state_controller state;

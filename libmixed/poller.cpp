@@ -1,4 +1,4 @@
-//#include <iostream>
+#include <iostream>
 #include "poller.hpp"
 #include "mutex_trylock.hpp"
 #include <pthread.h>
@@ -15,32 +15,24 @@ const int initial_epolls = 128;
 
 // man epoll_wait(2):
 // timeout = 0: return immediately even if no events are available
-const int epoll_timeout = 0;
-
-//static member
-scheduler::poller::ptr scheduler::poller::instance( (scheduler::poller* )0 );
+// timeout = 10: wait for events for 10 ms
+const int epoll_timeout = 10;
 
 scheduler::poller::ptr
-scheduler::poller::get( ::pthread_mutex_t* m_ )
+scheduler::poller::get()
 {
-	if ( instance.get() == 0 )
-	{
-		instance.reset( new poller( m_ ) );
-		instance->init();
-	}
+		shared_ptr< poller > i( new poller() );
+		i->init();
 
-	return instance;
-}
-
-scheduler::poller::poller( ::pthread_mutex_t* m_ )
-  : _m( m_ )
-  , watched_sockets_size( initial_epolls )
-  , watched_sockets( new ::epoll_event[ initial_epolls ]() )
-{
+	return i;
 }
 
 scheduler::poller::poller()
-{}
+  : current_sockets_number( 0 )
+  , watched_sockets( new ::epoll_event[ initial_epolls ]() )
+  , watched_sockets_size( initial_epolls )
+{
+}
 
 scheduler::poller::poller( scheduler::poller& )
 {}
@@ -97,7 +89,16 @@ scheduler::poller::add( int fd_, uint32_t flags ) throw( std::exception )
 vector< ::epoll_event >*
 scheduler::poller::poll()
 {
-  int events_number = epoll_wait( _fd, watched_sockets, watched_sockets_size, epoll_timeout );
+  int events_number;
+  //std::cout << "current_sockets_number: " << current_sockets_number << std::endl;
+  if ( current_sockets_number > 0 )
+  {
+    events_number = epoll_wait( _fd, watched_sockets, watched_sockets_size, epoll_timeout );
+  }
+  else
+  {
+    return 0;
+  }
   
 	vector< ::epoll_event >* v;
 	if ( events_number > 0 )
@@ -133,4 +134,10 @@ scheduler::poller::remove( int fd_ )
 
   current_sockets_number--;
 
+}
+
+bool
+scheduler::poller::contains( int fd_ )
+{
+  return ( _events.find( fd_ ) == _events.end() ) ? false : true;
 }

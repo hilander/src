@@ -10,6 +10,7 @@
 #include <scheduler_tools.hpp>
 #include <manager.hpp>
 #include <scheduler_interface.hpp>
+#include "poller.hpp"
 
 namespace scheduler
 {
@@ -76,11 +77,11 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 
 		/** \brief Zablokuj wątek.
 		 */
-		void block( scheduler::data_kind k, fiber::fiber::ptr f, accept_connect_data::ptr data );
-
-		void block( scheduler::data_kind k, fiber::fiber::ptr f, int fd_ );
+		void block( fiber::fiber::ptr f, scheduler::read_write_data& d );
 
 		void read_messages();
+
+		void do_epolls();
 
 		bool ended();
 
@@ -101,19 +102,19 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 		virtual bool receive( spawned_data& data );
 
 		//sockets
-		virtual void read( std::vector< char >& buf_ , ssize_t& read_bytes_, fiber::fiber::ptr caller, int fd_ );
+		virtual bool read( fiber::fiber::ptr caller, read_write_data& data_, ssize_t& read_bytes_ );
 
-		virtual void write( std::vector< char >& buf_ , ssize_t& read_bytes_, fiber::fiber::ptr caller, int fd_ );
+		virtual bool write( fiber::fiber::ptr caller, read_write_data& data_, ssize_t& written_bytes_ );
 
-		virtual void init_server( int fd_, fiber::fiber::ptr caller );
+		virtual void init_server( int fd_ );
 
-		virtual void accept( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data );
+		virtual bool accept( int fd_, accept_connect_data::ptr data );
 
-		virtual void init_client( int fd_, fiber::fiber::ptr caller );
+		virtual void init_client( int fd_ );
 
-		virtual void connect( int fd_, fiber::fiber::ptr caller, accept_connect_data::ptr data );
+		virtual bool connect( int fd_, accept_connect_data::ptr data );
 
-    virtual void close( int fd_, fiber::fiber::ptr caller );
+    virtual void close( int fd_ );
 
 	private:
 		libcoro::coroutine::ptr base_coroutine;
@@ -131,6 +132,10 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 		::pthread_t uls_thread;
 		::pthread_attr_t uls_attr;
 		bool _ended;
+    scheduler::poller::ptr _epoller;
+		std::map< int, fiber::fiber::ptr > blocked;
+		std::vector< ::epoll_event >* epoll_state;
+    int epolls;
 };
 
 }

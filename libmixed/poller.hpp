@@ -5,7 +5,6 @@
 #include <map>
 #include <vector>
 #include <sys/epoll.h>
-#include <pthread.h>
 
 namespace scheduler
 {
@@ -18,7 +17,7 @@ class poller
 
 	public:
 
-		static ptr get( ::pthread_mutex_t* m_ );
+		static ptr get();
 
 		/** \brief Triggeruj epoll-a: sprawdź, które sockety coś zapisały / odczytały
 		 * \return true, gdy co najmniej jeden z socketów zmienił stan; false wpw.
@@ -30,6 +29,8 @@ class poller
 		bool add( int fd_ ) throw( std::exception );
 
 		void remove( int fd_ );
+
+    bool contains ( int fd_ );
 
 	public:
 
@@ -43,19 +44,12 @@ class poller
 
     poller( poller& );
 
-    poller( ::pthread_mutex_t* m_ );
-
-	private:
-
-		static poller::ptr instance;
-
 	private:
 		int _fd;
-		::epoll_event* watched_sockets;
-    size_t watched_sockets_size;
     size_t current_sockets_number;
-    ::pthread_mutex_t* _m;
+		::epoll_event* watched_sockets;
     std::map< int, ::epoll_event > _events;
+    size_t watched_sockets_size;
 };
 
 }

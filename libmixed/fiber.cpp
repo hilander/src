@@ -86,115 +86,46 @@ fiber::fiber::send_data( scheduler::spawned_data& d )
 	// probably not needed
 }
 
+////////////////////////////////////////////////////////////////////////////////
 // wrappery dla socketów
+////////////////////////////////////////////////////////////////////////////////
+
 bool
 fiber::fiber::read( std::vector< char >& buf_ , ssize_t& read_bytes_, int fd_  )
 {
-	using namespace scheduler;
-
-	_supervisor->read( buf_ , read_bytes_, this, fd_ );
-	spawned_data result;
-	if ( receive( result ) )
-	{
-		switch ( result.d )
-		{
-			case SOCKET_READ_READY:
-				return ( read_bytes_ = ::read( fd_, &buf_[0], buf_.size() ) ) > 0;
-
-			case SOCKET_READ_FAIL:
-			default:
-				return false;
-		}
-	}
-	else
-	{
-		return false;
-	}
+	scheduler::read_write_data rwdata;
+	rwdata.fd = fd_;
+	rwdata.buf = static_cast<void*>( &buf_ );
+  rwdata.size = read_bytes_;
+	return _supervisor->read( this, rwdata, read_bytes_ );
 }
 
 bool
 fiber::fiber::write( std::vector< char >& buf_ , ssize_t& written_bytes_, int fd_  )
 {
-	using namespace scheduler;
-
-	_supervisor->write( buf_ , written_bytes_, this, fd_  );
-	spawned_data result;
-	if ( receive( result ) )
-	{
-		switch ( result.d )
-		{
-			case SOCKET_WRITE_READY:
-				return ( written_bytes_ = ::write( fd_, &buf_[0], buf_.size() ) ) > 0;
-
-			case SOCKET_WRITE_FAIL:
-			default:
-				return false;
-		}
-	}
-	else
-	{
-		return false;
-	}
+	scheduler::read_write_data rwdata;
+	rwdata.fd = fd_;
+	rwdata.buf = static_cast<void*>( &buf_ );
+  rwdata.size = written_bytes_;
+	return _supervisor->write( this, rwdata, written_bytes_ );
 }
 
-int
-fiber::fiber::accept( int fd_, ::sockaddr& saddr )
+bool
+fiber::fiber::accept( int fd_, scheduler::accept_connect_data& data_ )
 {
-	using namespace scheduler;
-
-  scheduler::accept_connect_data data;
-	_supervisor->accept( fd_, this, &data );
-	spawned_data result;
-	if ( receive( result ) )
-	{
-		switch ( result.d )
-		{
-			case SERVER_ACCEPT_OK:
-				saddr = data.saddr;
-				return data.fd;
-
-			case SERVER_ACCEPT_FAIL:
-			default:
-				return 0;
-		}
-	}
-	else
-	{
-		return -1;
-	}
+	return _supervisor->accept( fd_, &data_ );
 }
 
 // wrappery dla klienta
 // note: po accept() klientem jest również otrzymany fd
 bool
-fiber::fiber::connect( int fd_, ::sockaddr& saddr )
+fiber::fiber::connect( int fd_, scheduler::accept_connect_data& data_ )
 {
-	using namespace scheduler;
-
-  scheduler::accept_connect_data data;
-	_supervisor->connect( fd_, this, &data );
-	spawned_data result;
-	if ( receive( result ) )
-	{
-		switch ( result.d )
-		{
-			case CLIENT_CONNECT_OK:
-				saddr = data.saddr;
-				return true;
-
-			case CLIENT_CONNECT_FAIL:
-			default:
-				return false;
-		}
-	}
-	else
-	{
-		return false;
-	}
+	return _supervisor->connect( fd_, &data_ );
 }
 
-bool
+void
 fiber::fiber::do_close( int fd_ )
 {
-  _supervisor->close( fd_, this );
+  _supervisor->close( fd_ );
 }

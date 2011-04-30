@@ -65,8 +65,6 @@ scheduler::ueber_scheduler::init( std::list< userspace_scheduler* >* local_sched
   
   // pthreads end
   
-	epoller = poller::get( 0 );
-
   if ( local_schedulers == 0 )
   {
       create_local_schedulers();
@@ -176,33 +174,6 @@ scheduler::ueber_scheduler::run()
             break;
             
           case BLOCK: // won't be used, but it will be always as first
-            break;
-
-					case SOCKET_READ_REQ:
-					case SOCKET_WRITE_REQ:
-					{
-						int* descr = (int*) (pc.p);
-						move_to_blocked( *descr, pc );
-						break;
-					}
-
-					case REGISTER_SERVER_REQ:
-					case REGISTER_CLIENT_REQ:
-						do_register( pc );
-						break;
-
-					case DEREGISTER_SOCKET_REQ:
-            do_deregister( pc );
-						break;
-
-					case CLIENT_CONNECT_REQ:
-						do_connect( pc );
-						break;
-            
-					case SERVER_ACCEPT_REQ:
-            do_accept ( pc );
-						break;
-            
           default:
             break;
         }
@@ -210,9 +181,6 @@ scheduler::ueber_scheduler::run()
       }
     }
     
-		// nie tylko epoll, również accept / connect
-		do_epolls();
-
     total_workload = 0;
     for ( it = schedulers.begin();
     it != schedulers.end();
@@ -367,6 +335,7 @@ scheduler::ueber_scheduler::receive( spawned_data& data )
 // Sockets                                                                     /
 ////////////////////////////////////////////////////////////////////////////////
 
+/*
 void
 scheduler::ueber_scheduler::do_epolls()
 {
@@ -534,4 +503,5 @@ scheduler::ueber_scheduler::set_epoll_response( ::epoll_event& e, spawned_data& 
 			break;
 	}
 }
+*/
 

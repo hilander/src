@@ -31,34 +31,6 @@ enum data_kind
 	SPAWN_CONFIRMED,
   FIBER_SPECIFIC,
 
-	REGISTER_SERVER_REQ,
-	REGISTER_SERVER_OK,
-	REGISTER_SERVER_FAIL,
-
-	REGISTER_CLIENT_REQ,
-	REGISTER_CLIENT_OK,
-	REGISTER_CLIENT_FAIL,
-
-	DEREGISTER_SOCKET_REQ,
-	DEREGISTER_SOCKET_OK,
-	DEREGISTER_SOCKET_FAIL,
-
-	SERVER_ACCEPT_REQ,
-	SERVER_ACCEPT_OK,
-	SERVER_ACCEPT_FAIL,
-
-	CLIENT_CONNECT_REQ,
-	CLIENT_CONNECT_OK,
-	CLIENT_CONNECT_FAIL,
-
-	SOCKET_READ_REQ,
-	SOCKET_READ_READY,
-	SOCKET_READ_FAIL,
-
-	SOCKET_WRITE_REQ,
-	SOCKET_WRITE_READY,
-	SOCKET_WRITE_FAIL,
-
 	NOTHING
 };
 
@@ -68,6 +40,26 @@ struct accept_connect_data
 
 	int fd;
 	::sockaddr saddr;
+};
+
+struct socket_req
+{
+	enum req
+	{
+		SOCKET_READ_REQ,
+		SOCKET_WRITE_REQ
+	};
+	req request;
+};
+
+struct read_write_data
+{
+	typedef read_write_data* ptr;
+
+	int fd;
+	void* buf;
+	ssize_t size;
+	socket_req req;
 };
 
 struct spawned_data
