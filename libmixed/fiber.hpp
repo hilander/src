@@ -54,9 +54,9 @@ class fiber : public libcoro::coroutine
 		void send_data( scheduler::spawned_data& d );
     
 		// sockets (general) 
-		bool read( std::vector< char >& buf, ssize_t& read_bytes, int fd_ );
+		bool read( void* buf, ssize_t& read_bytes, int fd_ );
 
-		bool write( std::vector< char >& buf, ssize_t& read_bytes, int fd_ );
+		bool write( void* buf, ssize_t& read_bytes, int fd_ );
 		
 		// server socket
 		bool accept( int fd_, scheduler::accept_connect_data& data_ );

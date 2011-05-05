@@ -91,21 +91,21 @@ fiber::fiber::send_data( scheduler::spawned_data& d )
 ////////////////////////////////////////////////////////////////////////////////
 
 bool
-fiber::fiber::read( std::vector< char >& buf_ , ssize_t& read_bytes_, int fd_  )
+fiber::fiber::read( void* buf_ , ssize_t& read_bytes_, int fd_  )
 {
 	scheduler::read_write_data rwdata;
 	rwdata.fd = fd_;
-	rwdata.buf = static_cast<void*>( &buf_ );
+	rwdata.buf = buf_;
   rwdata.size = read_bytes_;
 	return _supervisor->read( this, rwdata, read_bytes_ );
 }
 
 bool
-fiber::fiber::write( std::vector< char >& buf_ , ssize_t& written_bytes_, int fd_  )
+fiber::fiber::write( void* buf_ , ssize_t& written_bytes_, int fd_  )
 {
 	scheduler::read_write_data rwdata;
 	rwdata.fd = fd_;
-	rwdata.buf = static_cast<void*>( &buf_ );
+	rwdata.buf = buf_;
   rwdata.size = written_bytes_;
 	return _supervisor->write( this, rwdata, written_bytes_ );
 }

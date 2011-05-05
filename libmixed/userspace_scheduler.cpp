@@ -347,7 +347,6 @@ scheduler::userspace_scheduler::write( fiber::fiber::ptr caller, read_write_data
 	{
 		void* tmp = data_.buf;
 		written_bytes_ = ::write( data_.fd, tmp, data_.size );
-    std::cout << "," ; std::cout.flush();
 		return (written_bytes_ > 0) ? true : false;
 	}
 	return false;
