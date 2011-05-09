@@ -40,6 +40,8 @@ class fiber : public libcoro::coroutine
     virtual void run();
 
     void set_supervisor( scheduler::userspace_scheduler* supervisor_ );
+
+		void wait();
     
   public: 
 
@@ -52,6 +54,8 @@ class fiber : public libcoro::coroutine
 		void receive_data( scheduler::spawned_data& d );
 
 		void send_data( scheduler::spawned_data& d );
+
+		void create_fiber( fiber::ptr fp_ );
     
 		// sockets (general) 
 		bool read( std::vector< char >& buf, ssize_t& read_bytes, int fd_ );

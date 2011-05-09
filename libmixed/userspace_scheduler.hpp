@@ -116,17 +116,17 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 
     virtual void close( int fd_ );
 
+	public:
+		ueber_scheduler* us;
+
 	private:
 		libcoro::coroutine::ptr base_coroutine;
 		libmanager::manager::ptr manager;
 
 		thread_container ready;
-		//std::map< int, scheduler::data_kind* > socket_descriptors;
-		//std::map< int, int > waiting_descriptors;
 
 		bool scheduler_end;
 		int workload;
-		ueber_scheduler* us;
 		raw_pipe::ptr message_device;
 
 		::pthread_t uls_thread;
