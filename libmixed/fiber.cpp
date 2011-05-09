@@ -86,6 +86,11 @@ fiber::fiber::send_data( scheduler::spawned_data& d )
 	// probably not needed
 }
 
+void
+fiber::fiber::create_fiber( fiber::ptr fp_ )
+{
+	_supervisor->us->spawn( fp_ );
+}
 ////////////////////////////////////////////////////////////////////////////////
 // wrappery dla socketów
 ////////////////////////////////////////////////////////////////////////////////
@@ -128,4 +133,13 @@ void
 fiber::fiber::do_close( int fd_ )
 {
   _supervisor->close( fd_ );
+}
+
+void
+fiber::fiber::wait()
+{
+	while ( state.get() != libcoro::state_controller::FINISHED )
+	{
+		yield();
+	}
 }
