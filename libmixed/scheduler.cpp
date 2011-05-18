@@ -46,6 +46,12 @@ void* scheduler::ueber_scheduler::go(void* obj)
 }
 
 void 
+scheduler::ueber_scheduler::init()
+{
+	this->init( 0 );
+}
+
+void 
 scheduler::ueber_scheduler::init( std::list< userspace_scheduler* >* local_schedulers )
 {
   base_coroutine = libcoro::factory::create_coroutine();
@@ -160,7 +166,7 @@ scheduler::ueber_scheduler::run()
     {
       spawned_data pc;
       pc.d = NOTHING;
-      while ( read_and_interpret( *pipe_it, pc ) )
+      if ( read_and_interpret( *pipe_it, pc ) )
       {
         switch ( pc.d )
         {
@@ -173,6 +179,14 @@ scheduler::ueber_scheduler::run()
 						send( pc );
             break;
             
+					case SPAWN:
+						if ( pc.p != 0 )
+						{
+							fiber::fiber::ptr fp = static_cast< fiber::fiber::ptr >( pc.p );
+							spawn( fp );
+						}
+						break;
+
           case BLOCK: // won't be used, but it will be always as first
           default:
             break;
@@ -280,7 +294,7 @@ scheduler::ueber_scheduler::~ueber_scheduler()
 
 void* scheduler::ueber_scheduler::stub_go(void* obj)
 {
-  ueber_scheduler::ueber_scheduler* scheduler_obj = ( ueber_scheduler::ueber_scheduler* )obj;
+  ueber_scheduler* scheduler_obj = ( ueber_scheduler* )obj;
   pthread_barrier_wait( &scheduler_obj->barrier );
   return 0;
 }

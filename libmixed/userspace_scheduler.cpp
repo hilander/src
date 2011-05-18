@@ -6,13 +6,13 @@
 #include "poller.hpp"
 
 scheduler::userspace_scheduler::userspace_scheduler(ueber_scheduler* ptr)
-: workload(0), us(ptr), _ended( false )
+: us(ptr), workload(0), _ended( false )
 {
 }
 
 /* Tylko do debugowania */
 scheduler::userspace_scheduler::userspace_scheduler(ueber_scheduler* ptr, std::list< fiber::fiber::ptr > fibers_ )
-: workload(0), us(ptr), _ended( false )
+: us(ptr), workload(0), _ended( false )
 {
     for ( std::list< fiber::fiber::ptr >::iterator i = fibers_.begin();
           i != fibers_.end();
@@ -53,12 +53,12 @@ scheduler::userspace_scheduler::init( raw_pipe::ptr message_pipe )
     }
     scheduler_end = false;
     workload = ready.size();
+    epolls = 0;
+    _epoller = poller::get();
 
     pthread_attr_init( &uls_attr );
     // inicjalizacja zakończona: można uruchomić wątek, w którym będzie działać scheduler.
     pthread_create( &uls_thread, &uls_attr, &userspace_scheduler::go, (void*)this );
-    epolls = 0;
-    _epoller = poller::get();
 }
 
 
@@ -132,6 +132,7 @@ scheduler::userspace_scheduler::run()
 			 && ( running->state.get() != libcoro::state_controller::BLOCKED ) )
     {
       running->start(this);
+			//if ( !ready.empty() ) std::cout << "userspace_scheduler::run(): switched stack." << std::endl;
       if ( running->state.get() == libcoro::state_controller::FINISHED )
       {
         ready.dispose();
@@ -147,6 +148,21 @@ void
 scheduler::userspace_scheduler::start()
 {
   libcoro::coroutine::start( base_coroutine ); 
+}
+
+void 
+scheduler::userspace_scheduler::spawn(bool, fiber::fiber::ptr fiber)
+{
+  spawned_data sp;
+  sp.d = SPAWN_FROM_FIBER;
+  sp.p = fiber;
+  bool written;
+  do
+  {
+    written = message_device->write_in( sp );
+  }
+  while ( !written )
+               ; // a co!
 }
 
 void 
@@ -200,6 +216,21 @@ scheduler::userspace_scheduler::spawn(void* f, bool confirm )
 	//std::cout << "spawn: confirmed." << std::endl;
 }
 
+void
+scheduler::userspace_scheduler::create_fiber( fiber::fiber::ptr fp_ )
+{
+	spawned_data sp;
+	sp.d = scheduler::SPAWN;
+	sp.p = fp_;
+	bool written;
+	do
+	{
+		written = message_device->write_out( sp );
+	}
+	while ( !written )
+		;
+}
+
 bool 
 scheduler::userspace_scheduler::empty()
 {
@@ -217,10 +248,10 @@ scheduler::userspace_scheduler::get_workload()
 /*
 */
 void
-scheduler::userspace_scheduler::block( fiber::fiber::ptr f, scheduler::read_write_data& d )
+scheduler::userspace_scheduler::block( fiber::fiber::ptr f, int fd_ )
 {
 	f->state.block();
-	blocked.insert( std::pair< int, fiber::fiber::ptr >( d.fd, f ) );
+	blocked.insert( std::pair< int, fiber::fiber::ptr >( fd_, f ) );
 }
 
 void 
@@ -247,6 +278,10 @@ scheduler::userspace_scheduler::read_messages()
         spawn(sp.p, true);
 				response.d = SPAWN_CONFIRMED;
 				response.p = 0;
+        break;
+
+      case SPAWN_FROM_FIBER:
+        spawn(sp.p, false);
         break;
 
 			case FIBER_SPECIFIC:
@@ -317,7 +352,7 @@ scheduler::userspace_scheduler::read( fiber::fiber::ptr caller, read_write_data&
 	
   assert( _epoller->contains( data_.fd ) );
 	data_.req.request = socket_req::SOCKET_READ_REQ;
-	block( (fiber::fiber*)caller, data_ );
+	block( (fiber::fiber*)caller, data_.fd );
 	caller->yield();
 
 	// we are unblocked!
@@ -338,7 +373,7 @@ scheduler::userspace_scheduler::write( fiber::fiber::ptr caller, read_write_data
 	
   assert( _epoller->contains( data_.fd ) );
 	data_.req.request = socket_req::SOCKET_WRITE_REQ;
-	block( (fiber::fiber*)caller, data_ );
+	block( (fiber::fiber*)caller, data_.fd );
 	caller->yield();
 
 	// we are unblocked!
@@ -360,20 +395,32 @@ scheduler::userspace_scheduler::init_server( int fd_ )
 }
 
 bool
-scheduler::userspace_scheduler::accept( int fd_, accept_connect_data::ptr data )
+scheduler::userspace_scheduler::accept( int fd_, accept_connect_data::ptr data, fiber::fiber::ptr caller )
 {
-  int accepted = 0;
+	using std::vector;
+	int accepted = 0;
+	
+  assert( _epoller->contains( data->fd ) );
+	block( (fiber::fiber*)caller, data->fd );
+	caller->yield();
 
-  socklen_t sl = sizeof( ::sockaddr_in );
-  if ( ( accepted = ::accept4( data->fd, &(data->saddr), &sl, SOCK_NONBLOCK ) ) != 0 )
-  {
-    data->fd = accepted;
-    return true;
-  }
-  else
-  {
-    return false;
-  }
+	// we are unblocked!
+	vector< ::epoll_event >::iterator ev = std::find_if( epoll_state->begin(), epoll_state->end(), state_finder( data->fd ) );
+	size_t sl = sizeof(data->saddr);
+	if ( ev->events & ( EPOLLIN | EPOLLOUT ) )
+	{
+		if ( ( accepted = ::accept( data->fd, &(data->saddr), &sl ) ) != 0 )
+		{
+			data->fd = accepted;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return false;
+
 }
 
 void

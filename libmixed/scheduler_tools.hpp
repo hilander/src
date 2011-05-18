@@ -30,6 +30,7 @@ enum data_kind
 	SPAWN,
 	SPAWN_CONFIRMED,
   FIBER_SPECIFIC,
+	SPAWN_FROM_FIBER,
 
 	NOTHING
 };
@@ -47,7 +48,8 @@ struct socket_req
 	enum req
 	{
 		SOCKET_READ_REQ,
-		SOCKET_WRITE_REQ
+		SOCKET_WRITE_REQ,
+		SOCKET_ACCEPT_REQ,
 	};
 	req request;
 };

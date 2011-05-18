@@ -77,7 +77,7 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 
 		/** \brief Zablokuj wątek.
 		 */
-		void block( fiber::fiber::ptr f, scheduler::read_write_data& d );
+		void block( fiber::fiber::ptr f, int fd_ );
 
 		void read_messages();
 
@@ -96,6 +96,8 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 		 * Ta metoda nie może byc wołana z zewnątrz uls-a, użyj spawn(fiber::fiber::ptr fiber).
 		 */
 		void spawn(void* f, bool confirm);
+		void create_fiber( fiber::fiber::ptr fp_ ); // ta metoda powinna działać.
+    void spawn(bool, fiber::fiber::ptr fiber); // ...a ta działa ;P
 
     virtual bool send( spawned_data& data );
 
@@ -108,7 +110,7 @@ class userspace_scheduler : public libcoro::coroutine, public abstract
 
 		virtual void init_server( int fd_ );
 
-		virtual bool accept( int fd_, accept_connect_data::ptr data );
+		virtual bool accept( int fd_, accept_connect_data::ptr data, fiber::fiber::ptr caller );
 
 		virtual void init_client( int fd_ );
 

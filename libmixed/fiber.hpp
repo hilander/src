@@ -77,6 +77,8 @@ class fiber : public libcoro::coroutine
     scheduler::userspace_scheduler* _supervisor;
 
 		std::list< scheduler::spawned_data > incoming_messages;
+
+		std::list< int > connections;
 };
 
 }

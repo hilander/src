@@ -35,7 +35,7 @@ fiber::fiber::set_supervisor( scheduler::userspace_scheduler* supervisor_ )
 void
 fiber::fiber::spawn( fiber::fiber::ptr f )
 {
-  _supervisor->spawn( f, false );
+  _supervisor->spawn( true, f );
 }
 
 bool
@@ -89,7 +89,7 @@ fiber::fiber::send_data( scheduler::spawned_data& d )
 void
 fiber::fiber::create_fiber( fiber::ptr fp_ )
 {
-	_supervisor->us->spawn( fp_ );
+	// jak w userspace_schedulerze
 }
 ////////////////////////////////////////////////////////////////////////////////
 // wrappery dla socketów
@@ -118,7 +118,7 @@ fiber::fiber::write( void* buf_ , ssize_t& written_bytes_, int fd_  )
 bool
 fiber::fiber::accept( int fd_, scheduler::accept_connect_data& data_ )
 {
-	return _supervisor->accept( fd_, &data_ );
+	return _supervisor->accept( fd_, &data_, this );
 }
 
 // wrappery dla klienta
