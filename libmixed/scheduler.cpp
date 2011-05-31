@@ -214,6 +214,7 @@ scheduler::ueber_scheduler::run()
 		}
   } while ( (total_workload != 0) || (blocked_num != 0) ) ;
 
+  /*
 	bool schedulers_have_finished_work;
 	do
 	{
@@ -228,8 +229,9 @@ scheduler::ueber_scheduler::run()
 	}
 	while ( ! schedulers_have_finished_work )
 		;
+    */
 	
-  //std::cout << "total workload: " << total_workload << ", blocked num: " << blocked_num << std::endl;
+  std::cout << "total workload: " << total_workload << ", blocked num: " << blocked_num << std::endl;
 }
 
 bool 
@@ -252,6 +254,12 @@ scheduler::ueber_scheduler::start()
   
   ::pthread_attr_init ( &stub_attr );
   ::pthread_create( &stub_thread, &stub_attr, &ueber_scheduler::stub_go, ( void* )this );
+}
+
+void 
+scheduler::ueber_scheduler::wait()
+{
+  pthread_join( main_thread, 0 );
 }
 
 void 

@@ -128,20 +128,30 @@ scheduler::userspace_scheduler::run()
     read_messages();
     
     fiber::fiber::ptr running = ready.get();
-    if ( running != 0  
-			 && ( running->state.get() != libcoro::state_controller::BLOCKED ) )
+    if ( running != 0  )
     {
-      running->start(this);
-			//if ( !ready.empty() ) std::cout << "userspace_scheduler::run(): switched stack." << std::endl;
+      if ( running->state.get() == libcoro::state_controller::READY )
+      {
+        //std::cout << "userspace_scheduler::run(): ready. Workload = " << workload << std::endl;
+        running->start(this);
+      }
       if ( running->state.get() == libcoro::state_controller::FINISHED )
       {
         ready.dispose();
         workload--;
+        std::cout << "userspace_scheduler::run(): FINISHED. Workload = " << workload << std::endl;
       }
     }
+    /*
+    else
+    {
+      workload = 0;
+    }
+    */
   }
-	//std::cout << "userspace_scheduler::run(): ended." << std::endl;
 	_ended = true;
+  us->wait();
+	std::cout << "userspace_scheduler::run(): ended." << std::endl;
 }
 
 void 
@@ -186,6 +196,8 @@ void
 scheduler::userspace_scheduler::spawn(void* f, bool confirm )
 {
   fiber::fiber::ptr fiber = (fiber::fiber::ptr)f;
+
+  fiber->state.on_init();
   
   // przydziel stos dla włókna
   manager->get( fiber );
@@ -195,6 +207,7 @@ scheduler::userspace_scheduler::spawn(void* f, bool confirm )
   fiber->set_supervisor( this );
   // Obciążenie: +1;
   workload++;
+  std::cout << "spawn: workload = " << workload << std::endl;
 
   // spawn wywołany z zarządzanego włókna, nie wymaga potwierdzenia.
   if ( !confirm )
@@ -252,6 +265,7 @@ scheduler::userspace_scheduler::block( fiber::fiber::ptr f, int fd_ )
 {
 	f->state.block();
 	blocked.insert( std::pair< int, fiber::fiber::ptr >( fd_, f ) );
+  //std::cout << "userspace_scheduler::block(). Workload = " << workload << std::endl; std::cout.flush();
 }
 
 void 
@@ -267,7 +281,7 @@ scheduler::userspace_scheduler::read_messages()
     switch (sp.d)
     {
       case BLOCKED:
-        workload--;
+        //workload--;
         break;
 
       case END:
@@ -441,7 +455,8 @@ void
 scheduler::userspace_scheduler::close( int fd_ )
 {
   _epoller->remove( fd_ );
-  ::close( fd_ );
+  ::shutdown( fd_, SHUT_RDWR );
+  //::close( fd_ );
   epolls--;
 }
 

@@ -75,6 +75,8 @@ class ueber_scheduler : public libcoro::coroutine, public abstract
 
     void join_u_sch();
 
+    void wait();
+
     libmanager::manager::ptr get_manager();
 
     void move_to_blocked( int fd_, scheduler::spawned_data& f_ );

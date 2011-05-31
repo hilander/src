@@ -24,6 +24,7 @@ fiber::fiber::run()
 {
   go();
   state.on_exit();
+  yield();
 }
 
 void 

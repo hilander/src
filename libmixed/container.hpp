@@ -28,87 +28,7 @@ class container
     bool exists( Item* elem );
 };
 
-/** Opakowane listy dwukierunkowe.
- * Chwilowo nieczynne :)
-template < typename Item >
-class container < Item, std::list< Item* > >
-{
-	private:
-		typedef std::list< Item* > list;
-		typedef typename list::iterator l_it;
-
-	private:
-		list threads;
-		list tmp_container;
-		l_it current;
-
-	public:
-		Item* get()
-		{
-			Item* thread = 0;
-			current = tmp_container.begin();
-
-			if ( current != tmp_container.end() )
-			{
-				thread = *( current );
-			}
-
-			return thread;
-		}
-
-		void block(container< Item, std::list< Item* > > c) 
-		{
-			if ( tmp_container.begin() != tmp_container.end() )
-			{
-				threads.splice( c.end(), tmp_container, tmp_container.begin() );
-			}
-		}
-
-		void suspend()
-		{
-			threads.splice( threads.end(), threads, current );
-		}
-
-		void dispose()
-		{
-			threads.erase( current );
-		}
-
-		void insert( Item* thread )
-		{
-			threads.push_front( thread );
-		}
-
-		bool empty()
-		{
-			return threads.empty();
-		}
-
-		int size()
-		{
-			return threads.size();
-		}
-
-    bool exists( Item* elem )
-    {
-      for ( l_it i = threads.begin();
-            i != threads.end();
-            i++ )
-      {
-        if ( (*i) == elem )
-        {
-          return true;
-        }
-      }
-
-      return false;
-    }
-};
- * _end_ class container < Item, std::list< Item* > > */
-
 /** \brief Opakowane drzewo czerwono-czarne z&nbsp;powtórzeniami.
- *
- * Jako klucz stosujemy czas działania.
  */
 template < typename Item >
 class container < Item, std::map< Item*, Item* > >
@@ -135,15 +55,13 @@ class container < Item, std::map< Item*, Item* > >
 			}
 			else
 			{
-				//std::cout << "container<map>::get(): threads.sise() = " << threads.size() << std::endl;
-				Item* thread = 0;
-				thread = ( *current ).second;
 				current++;
 				if ( current == threads.end() )
 				{
 					current = threads.begin();
-					//std::cout << "container<map>::get(): current <- threads.begin()" << std::endl;
 				}
+				Item* thread = 0;
+				thread = ( *current ).second;
 				return thread;
 			}
 		}
@@ -215,3 +133,4 @@ class container < Item, std::map< Item*, Item* > >
 }
 
 #endif
+
