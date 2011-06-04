@@ -94,6 +94,10 @@ scheduler::poller::poll()
   if ( current_sockets_number > 0 )
   {
     events_number = epoll_wait( _fd, watched_sockets, watched_sockets_size, epoll_timeout );
+    if ( events_number == -1 )
+    {
+      std::cout << "Epoll: error during poll!" << std::endl;
+    }
   }
   else
   {
@@ -140,4 +144,10 @@ bool
 scheduler::poller::contains( int fd_ )
 {
   return ( _events.find( fd_ ) == _events.end() ) ? false : true;
+}
+
+int 
+scheduler::poller::size()
+{
+  return current_sockets_number;
 }

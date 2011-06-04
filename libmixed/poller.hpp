@@ -32,6 +32,8 @@ class poller
 
     bool contains ( int fd_ );
 
+    int size();
+
 	public:
 
 		void init();

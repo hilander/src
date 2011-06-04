@@ -231,7 +231,7 @@ scheduler::ueber_scheduler::run()
 		;
     */
 	
-  std::cout << "total workload: " << total_workload << ", blocked num: " << blocked_num << std::endl;
+  //std::cout << "total workload: " << total_workload << ", blocked num: " << blocked_num << std::endl;
 }
 
 bool 

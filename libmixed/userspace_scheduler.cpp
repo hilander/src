@@ -1,3 +1,4 @@
+#include <exception>
 #include <cassert>
 #include <algorithm>
 #include <netinet/in.h>
@@ -139,7 +140,8 @@ scheduler::userspace_scheduler::run()
       {
         ready.dispose();
         workload--;
-        std::cout << "userspace_scheduler::run(): FINISHED. Workload = " << workload << std::endl;
+        //std::cout << "userspace_scheduler::run(): FINISHED. opened sockets: " << _epoller->size() << ". Workload = " << workload << std::endl;
+        //std::cout << "userspace_scheduler::run(): FINISHED. Workload = " << workload << std::endl;
       }
     }
     /*
@@ -151,7 +153,7 @@ scheduler::userspace_scheduler::run()
   }
 	_ended = true;
   us->wait();
-	std::cout << "userspace_scheduler::run(): ended." << std::endl;
+	//std::cout << "userspace_scheduler::run(): ended." << std::endl;
 }
 
 void 
@@ -207,7 +209,7 @@ scheduler::userspace_scheduler::spawn(void* f, bool confirm )
   fiber->set_supervisor( this );
   // Obciążenie: +1;
   workload++;
-  std::cout << "spawn: workload = " << workload << std::endl;
+  //std::cout << "spawn: workload = " << workload << std::endl;
 
   // spawn wywołany z zarządzanego włókna, nie wymaga potwierdzenia.
   if ( !confirm )
@@ -375,14 +377,29 @@ scheduler::userspace_scheduler::read( fiber::fiber::ptr caller, read_write_data&
 	{
 		void* tmp = data_.buf;
 		read_bytes_ = ::read( data_.fd, tmp, data_.size );
+    if ( read_bytes_ == 0 ) 
+    {
+      // std::cout << "read(): EOF" << std::endl; 
+      throw std::exception();
+    }
 		return (read_bytes_ > 0) ? true : false;
 	}
+  if ( ev->events & ( EPOLLRDHUP | EPOLLPRI | EPOLLERR | EPOLLHUP ) )
+  {
+    std::cout << "Error during write." << std::endl;
+  }
 	return false;
+  /*
+  void* tmp = data_.buf;
+  read_bytes_ = ::read( data_.fd, tmp, data_.size );
+  return (read_bytes_ > 0) ? true : false;
+  */
 }
                                                                 
 bool
 scheduler::userspace_scheduler::write( fiber::fiber::ptr caller, read_write_data& data_, ssize_t& written_bytes_ )
 {
+  /*
 	using std::vector;
 	
   assert( _epoller->contains( data_.fd ) );
@@ -398,13 +415,24 @@ scheduler::userspace_scheduler::write( fiber::fiber::ptr caller, read_write_data
 		written_bytes_ = ::write( data_.fd, tmp, data_.size );
 		return (written_bytes_ > 0) ? true : false;
 	}
+  if ( ev->events & ( EPOLLRDHUP | EPOLLPRI | EPOLLERR | EPOLLHUP ) )
+  {
+    std::cout << "Error during write." << std::endl;
+  }
 	return false;
+  */
+  void* tmp = data_.buf;
+  written_bytes_ = ::write( data_.fd, tmp, data_.size );
+  return (written_bytes_ > 0) ? true : false;
 }
 
 void
 scheduler::userspace_scheduler::init_server( int fd_ )
 {
-  _epoller->add( fd_ );
+  if ( !_epoller->add( fd_ ) )
+  {
+    std::cout << "Error during inserting fd " << fd_ << " into epoll." << std::endl;
+  }
   epolls++;
 }
 
