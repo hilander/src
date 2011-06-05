@@ -379,7 +379,7 @@ scheduler::userspace_scheduler::read( fiber::fiber::ptr caller, read_write_data&
 		read_bytes_ = ::read( data_.fd, tmp, data_.size );
     if ( read_bytes_ == 0 ) 
     {
-      // std::cout << "read(): EOF" << std::endl; 
+      std::cout << "read(): EOF" << std::endl; 
       throw std::exception();
     }
 		return (read_bytes_ > 0) ? true : false;
@@ -399,7 +399,6 @@ scheduler::userspace_scheduler::read( fiber::fiber::ptr caller, read_write_data&
 bool
 scheduler::userspace_scheduler::write( fiber::fiber::ptr caller, read_write_data& data_, ssize_t& written_bytes_ )
 {
-  /*
 	using std::vector;
 	
   assert( _epoller->contains( data_.fd ) );
@@ -420,10 +419,11 @@ scheduler::userspace_scheduler::write( fiber::fiber::ptr caller, read_write_data
     std::cout << "Error during write." << std::endl;
   }
 	return false;
-  */
+  /*
   void* tmp = data_.buf;
   written_bytes_ = ::write( data_.fd, tmp, data_.size );
   return (written_bytes_ > 0) ? true : false;
+  */
 }
 
 void
