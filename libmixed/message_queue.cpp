@@ -8,12 +8,41 @@
 ////////////////////////////////////////////////////////////////////////////////
 // message_queue                                                               /
 ////////////////////////////////////////////////////////////////////////////////
+// private                                                                     /
+////////////////////////////////////////////////////////////////////////////////
+int
+scheduler::message_queue::get_ready_queue( bool want_read )
+{
+	if ( want_read )
+	{
+		for (int i = 0; i < queue_count; i++ )
+		{
+			if ( ums[i] == MQ_READABLE )
+			{
+				return i;
+			}
+		}
+	}
+	else
+	{
+		for (int i = 0; i < queue_count; i++ )
+		{
+			if ( ums[i] == MQ_FREE )
+			{
+				return i;
+			}
+		}
+	}
+
+	return -1;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // public                                                                      /
 ////////////////////////////////////////////////////////////////////////////////
 scheduler::message_queue::message_queue()
 {
-  pthread_mutexattr_init( &_mattrs );
-  pthread_mutex_init( &_mutex, &_mattrs );
+	ums[0] = ums[1] = MQ_FREE;
 }
 
 scheduler::message_queue::~message_queue()
@@ -23,59 +52,50 @@ scheduler::message_queue::~message_queue()
 bool
 scheduler::message_queue::write( spawned_data& m )
 {
-  bool rv = true;
-
-  if ( pthread_mutex_trylock( &_mutex ) == 0 )
-	{
-		//std::cout << "read: mutex_lock..."; std::cout.flush();
-		try
-		{
-			spawned_data tmp;
-			spawned_data::rewrite( tmp, m );
-			_messages.push_back( tmp );
-		}
-		catch ( std::bad_alloc )
-		{
-			rv = false;
-		}
-		pthread_mutex_unlock( &_mutex );
-		//std::cout << "mutex_UN_lock" << std::endl;
-	}
-	else
-	{
-		rv = false;
-	}
-
-  return rv;
+  int current_queue = get_ready_queue();
+  if ( current_queue != -1 )
+  {
+    messages_t& ml = mls[ current_queue ];
+    ml.push_back( m );
+		ums[ current_queue ] = MQ_READABLE;
+    return true;
+  }
+  else
+  {
+    return false;
+  }
 }
 
 bool
 scheduler::message_queue::read( spawned_data& m )
 {
-  bool rv = true;
+  int current_queue = get_ready_queue();
+  if ( current_queue != -1 )
+  {
+    messages_t& ml = mls[ current_queue ];
 
-  if ( pthread_mutex_trylock( &_mutex ) == 0 )
-	{
-		//std::cout << "read: mutex_lock..."; std::cout.flush();
-		if ( ! _messages.empty() )
-		{
-      scheduler::spawned_data::rewrite( m, _messages.front() );
-			if ( m.d >= BLOCK && m.d <= NOTHING )
-			{
-				_messages.pop_front();
-			}
-		}
-		else
-		{
-			rv = false;
-		}
-		pthread_mutex_unlock( &_mutex );
-		//std::cout << "mutex_UN_lock" << std::endl;
-	}
-	else
-	{
-		rv = false;
-	}
+    for ( messages_t::iterator it = ml.begin();
+        it != ml.end();
+        it++
+        )
+    {
+      spawned_data tm = *it;
 
-  return rv;
+      ml.erase( it );
+      if ( ml.empty() )
+      {
+        ums[ current_queue ] = MQ_READY;
+        ml.clear();
+      }
+      std::cout << "read " << ( ( m->d == END ) ? "END" : "SH..." ) << "; " 
+        << "address: " << (unsigned long)&ml << ", size: " << ml.size() << std::endl;
+      return true;
+    }
+  }
+  else
+  {
+    get_writeable_queue();
+    return false;
+  }
 }
+

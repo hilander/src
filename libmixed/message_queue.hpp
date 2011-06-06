@@ -13,21 +13,20 @@ const int queue_count = 2;
 
 class message_queue
 {
-    public:
-        typedef std::list< spawned_data > messages_t;
+	private:
+		enum use_mode { MQ_FREE, MQ_READABLE, MQ_WRITABLE };
+		typedef std::list< spawned_data > messages_t;
+		messages_t mls[ queue_count ];
+		use_mode ums[ queue_count ];
+		int get_ready_queue( bool want_read );
 
-    private:
-        messages_t _messages;
-        pthread_mutex_t _mutex;
-        pthread_mutexattr_t _mattrs;
+	public:
+		message_queue();
+		~message_queue();
+		void clean();
 
-    public:
-        message_queue();
-        ~message_queue();
-        void clean();
-
-        bool read( spawned_data& m );
-        bool write( spawned_data& m );
+		bool read( spawned_data& m );
+		bool write( spawned_data& m );
 };
 
 }
