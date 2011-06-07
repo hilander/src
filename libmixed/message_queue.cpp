@@ -10,9 +10,37 @@
 ////////////////////////////////////////////////////////////////////////////////
 // private                                                                     /
 ////////////////////////////////////////////////////////////////////////////////
+
+struct q_states
+{
+  public:
+    enum state
+    {
+      // m - master queue, s - second queue
+      // f - free, r - readable
+      // 0 - zero, n - non-zero
+      mf0sf0  = 0x00,
+      mf0sr   = 0x02,
+      mrsfn   = 0x21,
+      mf0sfn  = 0x01,
+      mfnsr   = 0x12,
+      mfnsf0  = 0x10,
+      mrsf0   = 0x20
+
+    };
+};
+
+short
+scheduler::message_queue::get_state()
+{
+  short state = 0;
+  return state;
+}
+
 int
 scheduler::message_queue::get_ready_queue( bool want_read )
 {
+  /*
 	if ( want_read )
 	{
 		for (int i = 0; i < queue_count; i++ )
@@ -23,7 +51,7 @@ scheduler::message_queue::get_ready_queue( bool want_read )
 			}
 		}
 	}
-	else
+	else //write
 	{
 		for (int i = 0; i < queue_count; i++ )
 		{
@@ -33,6 +61,7 @@ scheduler::message_queue::get_ready_queue( bool want_read )
 			}
 		}
 	}
+  */
 
 	return -1;
 }

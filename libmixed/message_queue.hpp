@@ -19,6 +19,7 @@ class message_queue
 		messages_t mls[ queue_count ];
 		use_mode ums[ queue_count ];
 		int get_ready_queue( bool want_read );
+    short get_state();
 
 	public:
 		message_queue();
